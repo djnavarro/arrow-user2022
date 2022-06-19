@@ -1,0 +1,854 @@
+---
+title: "Larger-Than-Memory Data Workflows with Apache Arrow"
+author: "Danielle Navarro, Jonathan Keane, Stephanie Hazlitt"
+execute:
+  echo: true
+format: 
+  revealjs:
+    theme: simple
+    footer: "[arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)"
+---
+
+```{r}
+#| include: false
+# save the built-in output hook
+hook_output <- knitr::knit_hooks$get("output")
+
+# set a new output hook to truncate text output
+knitr::knit_hooks$set(output = function(x, options) {
+  if (!is.null(n <- options$out.lines)) {
+    x <- xfun::split_lines(x)
+    if (length(x) > n) {
+      # truncate the output
+      x <- c(head(x, n), "...\n")
+    }
+    x <- paste(x, collapse = "\n")
+  }
+  hook_output(x, options)
+})
+```
+
+
+## Housekeeping
+
+- Website: [arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)
+    - Written tutorial, data sets, exercises
+- Instructors: 
+    - Danielle Navarro
+    - Jonathan Keane
+    - Stephanie Hazlitt
+
+## Structure
+
+- Hello Arrow
+- Data Wrangling
+- Data Storage
+- Advanced Arrow
+
+# Hello Arrow
+
+Section 1: In which we dive straight into Arrow
+
+## Packages
+
+```{r packages}
+#| message: false
+#| echo: true
+library(arrow)
+library(dplyr)
+library(dbplyr)
+library(duckdb)
+library(stringr)
+library(lubridate)
+library(palmerpenguins)
+library(tictoc)
+library(scales)
+library(janitor)
+library(fs)
+library(ggplot2)
+library(ggrepel)
+library(sf)
+```
+
+## Opening a data set
+
+```{r open-dataset}
+#| echo: true
+nyc_taxi <- open_dataset("~/Datasets/nyc-taxi")
+nyc_taxi
+```
+
+## NYC taxi data: `nrow()`
+
+```{r taxi-rows}
+nyc_taxi |> nrow()
+```
+
+## NYC taxi data: `head()`
+
+```{r taxi-head}
+#| cache: true
+nyc_taxi |> head() |> collect()
+```
+
+## NYC taxi data: **dplyr** pipeline
+
+- use `filter()` to restrict data to 2017:2021
+- use `group_by()` to aggregate by `year`
+- use `summarize()` to count total and shared trips
+- use `mutate()` to compute percent of trips shared
+- use `collect()` to trigger execution
+
+## NYC taxi data: **dplyr** pipeline
+
+```{r first-dplyr-pipeline}
+#| cache: true
+nyc_taxi |>
+  filter(year %in% 2017:2021) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) |>
+  collect()
+```
+
+## Exercises
+
+1. Calculate total number of rides for each month in 2019
+2. For each month in 2019, find the distance travelled by the longest recorded taxi ride that month. Sort the results in month order
+
+
+# What is Arrow?
+
+Section 2: In which we ask "why do we care?"
+
+## What is Arrow?
+
+> A multi-language toolbox <br>
+> for accelerated data interchange <br> 
+> and in-memory processing
+
+## A multi-language toolbox
+
+![](img/arrow-libraries-structure.png)
+
+## Accelerated data interchange
+
+![](img/data-interchange-without-arrow.png)
+
+## Accelerated data interchange
+
+![](img/data-interchange-with-arrow.png)
+
+## Efficient in-memory processing
+
+![](img/tabular-data-asymmetries.png)
+
+
+
+## Efficient in-memory processing
+
+![](img/tabular-data-memory-buffers.png)
+
+
+## Efficient in-memory processing
+
+![](img/tabular-data-simd.png)
+
+# The {arrow} package
+
+Section 3: In which we unpack some things
+
+
+## The {arrow} package
+
+- Read/write functionality
+- Data wrangling functionality
+
+## Read/write
+
+![](img/arrow-read-write.png)
+
+## Data wrangling
+
+![](img/dplyr-backend.png)
+
+# Data wrangling with Arrow
+
+Section 4: In which we explore one-table computations
+
+## One-table dplyr verbs: queries
+
+```{r shared-rides-query}
+shared_rides <- nyc_taxi |>
+  filter(year %in% 2017:2021) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) 
+```
+
+## One-table dplyr verbs: `collect()`
+
+```{r shared-rides-collect, cache=TRUE}
+tic()
+collect(shared_rides)
+toc()
+```
+
+## Mutating multiple columns, manually
+
+```{r multiple-mutate-manual}
+#| cache: true
+millions <- function(x) x / 10^6
+
+shared_rides |>
+  mutate(
+    all_trips = millions(all_trips),
+    shared_trips = millions(shared_trips)
+  ) |>
+  collect()
+```
+
+## Arrow does not understand scoped verbs
+
+```{r multiple-mutate-scoped}
+#| error: true
+shared_rides |>
+  mutate_at(c("all_trips", "shared_trips"), millions) |>
+  collect()
+```
+
+## Arrow does not understand `across()`
+
+```{r multiple-mutate-across}
+#| error: true
+shared_rides |>
+  mutate(across(ends_with("trips"), millions)) |>
+  collect()
+```
+
+## Do `across()` after `collect()`
+
+```{r across-later}
+shared_rides |>
+  collect() |>
+  mutate(across(ends_with("trips"), millions))
+```
+
+# String edits
+
+Section 5: In which {arrow} translates {stringr} code
+
+
+## NYC taxi zones table
+
+```{r read-taxi-zones, message=FALSE}
+nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |> 
+  read_csv_arrow() |>
+  clean_names()
+
+nyc_taxi_zones
+```
+
+## NYC taxi zones as an Arrow Table
+
+```{r taxi-zones-arrow-table}
+nyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)
+nyc_taxi_zones_arrow
+```
+
+
+## Table columns are (Chunked) Arrays
+
+```{r taxi-zones-arrow-chunked-array}
+nyc_taxi_zones_arrow$zone
+```
+
+## Tracking the data
+
+![](img/data-tracking.png)
+
+
+## String manipulation exercise
+
+- Remove vowels and all text after `/`
+- Count length of abbreviated strings
+- Arrange by descending string length
+
+## String manipulation exercise
+
+```{r string-manipulation-arrow}
+short_zones <- nyc_taxi_zones_arrow |> 
+  mutate(
+    abbr_zone = zone |> 
+      str_replace_all("[aeiou' ]", "") |>
+      str_replace_all("/.*", "")
+  ) |>
+  mutate(
+    abbr_zone_len = str_length(abbr_zone)
+  ) |>
+  select(zone, abbr_zone, abbr_zone_len) |>
+  arrange(desc(abbr_zone_len)) 
+```
+
+- why use two `mutate()` calls?
+- why use `str_replace_all()` and not `str_remove_all()`
+
+## String manipulation exercise
+
+```{r string-manipulation-arrow-collect}
+collect(short_zones)
+```
+
+
+# Dates and times 
+
+Section 6: In which {arrow} translates {lubridate} code
+
+## Pickup at pi time
+
+```{r lubridate-expression}
+pi_time_pickups <- nyc_taxi |>
+  filter(year == 2022, month == 1) |>
+  mutate(
+    day = day(pickup_datetime),
+    weekday = wday(pickup_datetime, label = TRUE),
+    hour = hour(pickup_datetime),
+    minute = minute(pickup_datetime),
+    second = second(pickup_datetime)
+  ) |> 
+  filter(hour == 3, minute == 14, second == 15) |>
+  select(pickup_datetime, year, month, day, weekday)
+```
+
+## Pickup at pi time
+
+```{r lubridate-expression-collect}
+#| cache: true
+collect(pi_time_pickups) 
+```
+
+The output is correct: `hour == 3` refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)
+
+
+# Database joins
+
+Section 7: In which we explore two-table joins and encounter some potential traps for the unwary
+
+## Penguin data
+
+```{r show-penguins-table}
+penguins
+```
+
+## Penguin data: An auxiliary table
+
+```{r define-penguins-location}
+location <- arrow_table(
+  island = c("Torgersen", "Biscoe", "Dream"), 
+  lon = c(-64.77, -65.43, -64.73),
+  lat = c(-64.08, -65.50, -64.23)
+)  
+location
+
+```
+
+## Left joining penguins and location
+
+![](img/left-join-penguin.png)
+
+## Left joining works as expected 
+
+```{r left-join-penguin}
+penguins |> 
+  arrow_table() |>
+  left_join(location) |> 
+  select(species, island, bill_length_mm, lon, lat) |>
+  collect()
+```
+
+## Traps for the unwary...
+
+![](img/left-join-taxi.png)
+
+## Traps for the unwary...
+
+```{r pickup-zones}
+pickup <- nyc_taxi_zones |> 
+  select(
+    pickup_location_id = location_id, 
+    pickup_borough = borough
+  )
+
+pickup
+```
+
+## Traps for the unwary...
+
+```{r failed-join}
+#| error: true
+nyc_taxi |> 
+  left_join(pickup) |>
+  collect()
+```
+
+## Why didn't this work?
+
+```{r nyc-schema}
+nyc_taxi$schema
+```
+
+## Why didn't this work?
+
+```{r pickup-schema}
+arrow_table(pickup)$schema
+```
+
+## Controlling the schema
+
+```{r specifying-the-schema}
+nyc_taxi_zones <- nyc_taxi_zones |> 
+  as_arrow_table(
+    schema = schema(
+      location_id = int64(),
+      borough = utf8(), 
+      zone = utf8(),
+      service_zone = utf8()
+    )
+  )
+
+nyc_taxi_zones$schema
+```
+
+
+## Fixing the query
+
+```{r pickup-and-dropoff}
+pickup <- nyc_taxi_zones |> 
+  select(
+    pickup_location_id = location_id, 
+    pickup_borough = borough
+  )
+
+dropoff <- nyc_taxi_zones |> 
+  select(
+    dropoff_location_id = location_id, 
+    dropoff_borough = borough
+  )
+```
+
+## Fixing the query
+
+```{r fixing-the-query, cache=TRUE}
+tic()
+borough_counts <- nyc_taxi |> 
+  left_join(pickup) |>
+  left_join(dropoff) |>
+  count(pickup_borough, dropoff_borough) |>
+  arrange(desc(n)) |>
+  collect()
+toc()
+```
+
+## Fixing the query
+
+```{r borough-counts}
+borough_counts
+```
+
+## Exercise
+
+How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? 
+
+
+# Using DuckDB
+
+Section 8: In which {arrow} and {duckdb} play nicely
+
+## A difficulty in {arrow}
+
+```{r penguin-window-arrow, results='hide'}
+penguins |> 
+  arrow_table() |> 
+  mutate(id = row_number()) |> # a window function!
+  filter(is.na(sex)) |> 
+  select(id, sex, species, island)
+```  
+
+## An easy fix with {duckdb}
+
+```{r penguin-window-duckdb}
+penguins |> 
+  arrow_table() |> 
+  to_duckdb() |> 
+  mutate(id = row_number()) |>
+  filter(is.na(sex)) |> 
+  select(id, sex, species, island)
+```  
+
+## Numerology example
+
+```{r numerology, cache=TRUE}
+tic()
+nyc_taxi_jan <- open_dataset("~/Datasets/nyc-taxi/year=2022/month=1/")
+numerology <- nyc_taxi_jan |>
+  to_duckdb() |>  
+  window_order(pickup_datetime) |>
+  mutate(trip_id = row_number()) |>
+  filter(
+    trip_id |> as.character() |> str_detect("59"),
+    second(pickup_datetime) == 59,
+    minute(pickup_datetime) == 59
+  ) |> 
+  mutate(
+    magic_number = trip_id |> 
+      as.character() |> 
+      str_remove_all("[^59]") |>
+      as.integer()
+  ) |>
+  select(trip_id, magic_number, pickup_datetime) |>
+  collect()
+toc()
+```
+
+
+
+## Numerology example
+
+```{r numerology-print}
+numerology
+```
+
+
+# Big data file formats
+
+Section 9: In which we talk about parquet files
+
+## Big data file formats
+
+![](img/arrow-read-write-dataset.png)
+
+## Parquet files are "row chunked"
+
+![](img/parquet-chunking.png)
+
+
+## Parquet files are "row chunked, column-arranged, and paged"
+
+![](img/parquet-paging.png)
+
+
+
+## Parquet file organization
+
+![](img/parquet-organisation.png)
+
+
+## Reading parquet files
+
+```{r basic-parquet-read, message=FALSE}
+parquet_file <- "~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"
+
+nyc_taxi_2019_09 <- read_parquet(parquet_file)
+nyc_taxi_2019_09
+```
+
+## Reading parquet files
+
+```{r selective-parquet-read}
+parquet_file |>
+  read_parquet(col_select = matches("pickup"))
+```
+
+## Selective reads are faster
+
+```{r timing-parquet-reads}
+tic()
+parquet_file |>
+  read_parquet() |>
+  invisible() # suppress printing
+toc()
+
+tic()
+parquet_file |>
+  read_parquet(col_select = matches("pickup")) |>
+  invisible()
+toc()
+```
+
+
+# Multi-file datasets
+
+Section 10: In which we talk about partitioning
+
+## NYC taxi data files
+
+```{r nyc-taxi-files}
+nyc_taxi$files
+```
+
+## Partition structure matters
+
+```{r taxi-subset-filtering-times}
+tic()
+nyc_taxi |>
+  filter(year == 2016, month == 9) |>
+  nrow() 
+toc()
+
+tic()
+nyc_taxi |> 
+  filter(pickup_location_id == 138) |> 
+  nrow() 
+toc()
+```
+
+## Writing datasets
+
+```{r writing-dataset, cache=TRUE}
+tic()
+nyc_taxi |> 
+  filter(year == 2017) |>
+  group_by(month, vendor_name) |>
+  write_dataset("~/Datasets/nyc-taxi_2017")
+toc()
+```
+
+
+# Advanced Arrow
+
+Section 11: In which we talk about data structures
+
+## Data frames in R
+
+![](img/tabular-structures-r.png)
+
+## Arrow record batches
+
+![](img/tabular-structures-arrow-2.png)
+
+## Arrow tables
+
+![](img/tabular-structures-arrow-1.png)
+
+
+## Arrow scalars
+
+```{r}
+Scalar$create("New York")
+```
+
+## Arrow arrays
+
+```{r}
+city <- Array$create(c("New York", NA, NA, "Philadelphia"))
+city
+```
+
+## Arrow arrays
+
+```{r}
+city[1:2]
+```
+
+## Arrow arrays
+
+![](img/array-in-memory.png)
+
+## Chunked arrays
+
+![](img/chunked-array-in-memory.png)
+
+## Chunked arrays
+
+```{r}
+city <- ChunkedArray$create(
+  c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+  c("Sydney", "Barcelona")
+)
+city
+```
+
+
+## Chunked arrays
+
+```{r}
+city <- chunked_array(
+  c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+  c("Sydney", "Barcelona")
+)
+city
+```
+
+
+
+## Chunked arrays
+
+```{r}
+city[4:6]
+```
+
+## Tables are collections of chunked arrays
+
+```{r}
+riots <- arrow_table(
+  location = chunked_array(
+    c("Stonewall Inn", "Compton's Cafeteria", "Cooper Do-nuts", "Dewey's"), 
+    c("King's Cross", "La Rambla")
+  ), 
+  year = chunked_array(
+    c(1969, 1966, 1959, 1965),
+    c(1978, 1977)
+  ),
+  city = chunked_array(
+    c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+    c("Sydney", "Barcelona")
+  )
+)
+riots
+```
+
+
+## Tables are collections of chunked arrays
+
+```{r}
+riots$city
+```
+
+## Pulling into R
+
+```{r}
+as.data.frame(riots)
+```
+
+# Mapping scalar types
+
+Section 12: In which the devil is in the detail
+
+## Mapping scalar types
+
+![](img/scalar-numeric-types-1.png)
+
+## Mapping scalar types
+
+![](img/scalar-numeric-types-2.png)
+
+## Mapping scalar types
+
+![](img/scalar-other-types.png)
+
+# Wrapping up
+
+Section 13: In which we consider the big picture
+
+
+## Some things really need Arrow
+
+```{r airport-pickups-arrow, cache=TRUE}
+nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |> 
+  read_csv_arrow(
+    as_data_frame = FALSE, 
+    skip = 1, 
+    schema = schema(
+      LocationID = int64(),
+      Borough = utf8(),
+      Zone = utf8(),
+      service_zone = utf8()
+    )
+  ) |>
+  rename(
+    location_id = LocationID,
+    borough = Borough,
+    zone = Zone,
+    service_zone = service_zone
+  )
+  
+airport_zones <- nyc_taxi_zones |>
+  filter(str_detect(zone, "Airport")) |>
+  pull(location_id)
+
+dropoff_zones <- nyc_taxi_zones |>
+  select(
+    dropoff_location_id = location_id,
+    dropoff_zone = zone
+  ) 
+
+airport_pickups <- nyc_taxi |>
+  filter(pickup_location_id %in% airport_zones) |>
+  select(
+    matches("datetime"),
+    matches("location_id")
+  ) |>
+  left_join(dropoff_zones) |>
+  count(dropoff_zone) |>
+  arrange(desc(n)) |>
+  collect()
+```
+
+## Other things really need R
+
+```{r airport-pickups-ggplot}
+#| message: false
+dat <- "data/taxi_zones/taxi_zones.shp" |>
+  read_sf() |>
+  clean_names() |>
+  left_join(airport_pickups,
+            by = c("zone" = "dropoff_zone")) |>
+  arrange(desc(n))
+
+the_big_picture <- dat |>
+  ggplot(aes(fill = n)) +
+  geom_sf(size = .1, color = "#222222") +
+  scale_fill_distiller(
+    name = "Number of trips",
+    labels = label_comma(),
+    palette = "Oranges",
+    direction = 1
+  ) +
+  geom_label_repel(
+    stat = "sf_coordinates",
+    data = dat |>
+      mutate(zone = case_when(
+        str_detect(zone, "Airport") ~ zone,
+        str_detect(zone, "Times") ~ zone,
+        TRUE ~ "")
+      ),
+    mapping = aes(label = zone, geometry = geometry),
+    max.overlaps = 50,
+    box.padding = .5,
+    label.padding = .5,
+    label.size = .15,
+    label.r = 0,
+    force = 30,
+    force_pull = 0,
+    fill = "white",
+    min.segment.length = 0
+  ) +
+  theme_void() +
+  theme(
+    text = element_text(colour = "black"), 
+    plot.background = element_rect(colour = NA, fill = "#839496"),
+    legend.background = element_rect(fill = "white"),
+    legend.margin = margin(10, 10, 10, 10)
+  )
+```
+
+
+## {arrow} brings them together
+
+```{r airport-pickups-render, cache=TRUE}
+#| column: screen
+#| fig-width: 10
+#| fig-height: 6
+#| fig-dpi: 300
+#| message: false
+#| dev.args: !expr list(bg="#839496")
+the_big_picture
+```
+
+

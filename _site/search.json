@@ -11,7 +11,7 @@
     "href": "hello-arrow.html#get-started",
     "title": "Part 1: Hello Arrow",
     "section": "Let’s get started!",
-    "text": "Let’s get started!\nIf you’re going to go through this workshop, we ought to be able to give you a decent motivation for doing so, right? There’s no point in you learning about the arrow package if we can’t explain why it’s a good thing to know! But as all good writers know, sometimes it’s more powerful to show rather than tell, so let’s just start using arrow now and hold the explanations to the end.\nLet’s start by loading arrow and dplyr\n\nlibrary(arrow)\nlibrary(dplyr)\n\nActually, you can assume that every page on this site starts with those two packages and all the other dependencies loaded, even if this code chunk isn’t shown explicitly:\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)\n\nWhen you do this yourself you’ll see some additional messages that I’ve hidden from the output. Now that we have the packages loaded, we have access to the dplyr functions for data manipulation and (importantly!) the arrow back end that allows you to use dplyr syntax to manipulate data sets that are stored in Arrow.\nLet’s see this in action. I’ll use the open_dataset() function to connect to the NYC taxi data. On my machine this data is stored in the ~/Datasets/nyc-taxi folder, so my code looks like this:\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi\")\n\nYours will look slightly different depending on where you saved your local copy of the data. Now, if you remember from when you downloaded the data this is 69GB of information, yet open_dataset() returns a result almost immediately. What’s happened here is that arrow has scanned the contents of that folder, found the relevant files, and created an nyc_taxi object that stores some metadata about those files. Here’s what that looks like:\n\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32\n\n\nFor an R user used to working with data frames and tibbles, this output is likely to be unfamiliar. Each variable is listed as a row in the output, and next to the name of each variable you can see the type of data stored in it. It does represent a tabular data set just like a data frame, but it’s a different kind of thing. It has to be: behind the scenes there are 1.7 billion rows of data in one huge table, and this is just too big to load into memory. However, we can still work with it anyway. Here’s a simple example: I’ll extract the first six rows using the head() function and then collect() those rows from Arrow and return them to R:\n\nnyc_taxi |>\n  head() |>\n  collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\nThe output here is a perfectly ordinary tibble object that now exists in R just like any other object, and – in case you haven’t already looked at it – we have posted a data dictionary explaining what each of these columns represents. Of course, this version of the table only has a handful of rows, but if you imagine this table stretching out for a lot more you have a good sense of what the actual nyc_taxi data looks like. How many rows?\n\nnrow(nyc_taxi)\n\n[1] 1672590319\n\n\nYes, this really is a table with 1.7 billion rows. Yikes.\nOkay so let’s do something with it. Suppose I wanted to look at the five-year trends for the number of taxi rides in NYC, both in total and specifically for shared trips that have multiple passengers. I can do this using dplyr commands like this:\n\nuse filter() to limit the data to the period from 2017 to 2021\nuse group_by() to set year as the grouping variable\nuse summarize() to count the number of all_trips and shared_trips\nuse mutate() to compute a pct_shared column with the percent of trips shared\nuse collect() to trigger execution of the query and return results to R\n\nHere’s what that looks like:\n\nnyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\n\nTry typing this out yourself and then have a go at the exercises!\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nCalculate the total number of rides for every month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month and sort the results in month order\n\n\n\n\nnyc_taxi |> \n  filter(year == 2019) |>\n  count(month) |>\n  collect()\n\n# A tibble: 12 × 2\n   month       n\n   <int>   <int>\n 1    11 6877463\n 2    10 7213588\n 3    12 6895933\n 4     1 7667255\n 5     2 7018750\n 6     3 7832035\n 7     4 7432826\n 8     5 7564884\n 9     6 6940489\n10     7 6310134\n11     8 6072851\n12     9 6567396\n\n\n\n\n\nnyc_taxi |> \n  filter(year == 2019) |>\n  group_by(month) |>\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |>\n  arrange(month) |> \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   <int>        <dbl>\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\n\nAnd there you have it! Your first data analysis using arrow is done. Yay!"
+    "text": "Let’s get started!\nIf you’re going to go through this workshop, we ought to be able to give you a decent motivation for doing so, right? There’s no point in you learning about the arrow package if we can’t explain why it’s a good thing to know! But as all good writers know, sometimes it’s more powerful to show rather than tell, so let’s just start using arrow now and hold the explanations to the end.\nLet’s start by loading arrow and dplyr\n\nlibrary(arrow)\nlibrary(dplyr)\n\nActually, you can assume that every page on this site starts with those two packages and all the other dependencies loaded, even if this code chunk isn’t shown explicitly:\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)\n\nWhen you do this yourself you’ll see some additional messages that I’ve hidden from the output. Now that we have the packages loaded, we have access to the dplyr functions for data manipulation and (importantly!) the arrow back end that allows you to use dplyr syntax to manipulate data sets that are stored in Arrow.\nLet’s see this in action. I’ll use the open_dataset() function to connect to the NYC taxi data. On my machine this data is stored in the ~/Datasets/nyc-taxi folder, so my code looks like this:\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi\")\n\nYours will look slightly different depending on where you saved your local copy of the data. Now, if you remember from when you downloaded the data this is 69GB of information, yet open_dataset() returns a result almost immediately. What’s happened here is that arrow has scanned the contents of that folder, found the relevant files, and created an nyc_taxi object that stores some metadata about those files. Here’s what that looks like:\n\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32\n\n\nFor an R user used to working with data frames and tibbles, this output is likely to be unfamiliar. Each variable is listed as a row in the output, and next to the name of each variable you can see the type of data stored in it. It does represent a tabular data set just like a data frame, but it’s a different kind of thing. It has to be: behind the scenes there are 1.7 billion rows of data in one huge table, and this is just too big to load into memory. However, we can still work with it anyway. Here’s a simple example: I’ll extract the first six rows using the head() function and then collect() those rows from Arrow and return them to R:\n\nnyc_taxi |>\n  head() |>\n  collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\nThe output here is a perfectly ordinary tibble object that now exists in R just like any other object, and – in case you haven’t already looked at it – we have posted a data dictionary explaining what each of these columns represents. Of course, this version of the table only has a handful of rows, but if you imagine this table stretching out for a lot more you have a good sense of what the actual nyc_taxi data looks like. How many rows?\n\nnrow(nyc_taxi)\n\n[1] 1672590319\n\n\nYes, this really is a table with 1.7 billion rows. Yikes.\nOkay so let’s do something with it. Suppose I wanted to look at the five-year trends for the number of taxi rides in NYC, both in total and specifically for shared trips that have multiple passengers. I can do this using dplyr commands like this:\n\nuse filter() to limit the data to the period from 2017 to 2021\nuse group_by() to set year as the grouping variable\nuse summarize() to count the number of all_trips and shared_trips\nuse mutate() to compute a pct_shared column with the percent of trips shared\nuse collect() to trigger execution of the query and return results to R\n\nHere’s what that looks like:\n\nnyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\n\nTry typing this out yourself and then have a go at the exercises!\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2\n\n\n\nCalculate the total number of rides for every month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month and sort the results in month order\n\n\n\n\nnyc_taxi |> \n  filter(year == 2019) |>\n  count(month) |>\n  collect()\n\n# A tibble: 12 × 2\n   month       n\n   <int>   <int>\n 1     1 7667255\n 2    10 7213588\n 3    12 6895933\n 4    11 6877463\n 5     3 7832035\n 6     4 7432826\n 7     5 7564884\n 8     2 7018750\n 9     6 6940489\n10     7 6310134\n11     8 6072851\n12     9 6567396\n\n\n\n\n\nnyc_taxi |> \n  filter(year == 2019) |>\n  group_by(month) |>\n  summarize(longest_trip = max(trip_distance, na.rm = TRUE)) |>\n  arrange(month) |> \n  collect()\n\n# A tibble: 12 × 2\n   month longest_trip\n   <int>        <dbl>\n 1     1         832.\n 2     2         702.\n 3     3         237.\n 4     4         831.\n 5     5         401.\n 6     6       45977.\n 7     7         312.\n 8     8         602.\n 9     9         604.\n10    10         308.\n11    11         701.\n12    12       19130.\n\n\nAnd there you have it! Your first data analysis using arrow is done. Yay!"
   },
   {
     "objectID": "hello-arrow.html#what-is-arrow",
@@ -28,11 +28,32 @@
     "text": "What can the arrow package do for R users?\nBroadly speaking we can divide the core functionality of the arrow package into two types of operation: Reading and writing data, and manipulating data\n\nRead/write capabilities\nThe diagram below shows (most of) the read/write capabilities of arrow in a schematic fashion:\n\n\n\n\n\nThere’s several things to comment on here.\nFirst, let’s look at the “destinations” column on the right hand side. You can read and write files (top right row) to your local storage, or you can send them to an S3 bucket. Regardless of where you’re reading from or writing to, arrow supports CSV (and other delimited text files), parquet, and feather formats. Not shown in the diagram are JSON files: arrow can read data from JSON format but not write to it.\nSecond, let’s look at the “objects” column on the left hand side. This column shows the three main data objects you’re likely to work with using arrow: data frames (and tibbles), Arrow Tables, and Arrow Datasets. Data frames are regular R objects stored in R memory, and Tables are the analogous data structure stored in Arrow memory. In contrast, Arrow Datasets are more complicated objects used when the data are too large to fit in memory, and typically stored on disk as multiple files. You can read and write any of these objects to and from disk using arrow. (Note that there are other data structures used by arrow that aren’t shown here!)\nThird, let’s look at the “stream” row on the bottom right. Instead of writing data to file, the arrow package allows you to stream it to a remote process. You can do this with in-memory data objects like Tables and data frames, but not for Datasets. Although not shown on the diagram, you can also do this for Arrow Record Batches.\nFinally, there is one big omission from this table: Arrow Flight servers. The arrow package contains functionality supporting Arrow Flight, but that’s not covered in this workshop!\n\n\nData manipulation\nThe data manipulation abilities of the arrow package come in a few different forms. For instance, one thing that arrow does is provide a low-level interface to the Arrow C++ library: you can call the compute functions in the C++ library directly from R if you want. However, for most R users this isn’t what you really want to do, because the Arrow C++ library has its own syntax and doesn’t feel very “R-like”.\nTo address this, arrow also supplies a dplyr backend, allowing R users to write normal dplyr code for data wrangling, and translating it into a form that the Arrow C++ library can execute. In that sense it’s very similar to the dbplyr package that does the same thing for SQL database queries:\n\n\n\n\n\nIt’s this dplyr back end that we relied on in the demonstration at the start of the session."
   },
   {
+    "objectID": "slides.html#housekeeping",
+    "href": "slides.html#housekeeping",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Housekeeping",
+    "text": "Housekeeping\n\nWebsite: arrow-user2022.netlify.app\n\nWritten tutorial, data sets, exercises\n\nInstructors:\n\nDanielle Navarro\nJonathan Keane\nStephanie Hazlitt"
+  },
+  {
+    "objectID": "slides.html#structure",
+    "href": "slides.html#structure",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Structure",
+    "text": "Structure\n\nHello Arrow\nData Wrangling\nData Storage\nAdvanced Arrow"
+  },
+  {
     "objectID": "packages-and-data.html",
     "href": "packages-and-data.html",
     "title": "Packages and Data",
     "section": "",
-    "text": "To install the required packages, run the following:\n\ninstall.packages(c(\n  \"arrow\", \"dplyr\", \"dbplyr\", \"duckdb\", \"fs\", \"janitor\",\n  \"palmerpenguins\", \"remotes\", \"scales\", \"stringr\", \n  \"lubridate\", \"tictoc\"\n))\n\nTo load them:\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\n\nThe workshop doesn’t use graphics or spatial data much but they are used on this page and again at the end. Suggested packages if you want to run those parts of the code can be installed with the following:\n\ninstall.packages(c(\"ggplot2\", \"ggrepel\", \"sf\"))\n\nLoad the packages with this:\n\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)"
+    "text": "Welcome to the workshop! On this page you’ll find information about the packages and data sets we’ll be using. The workshop proper starts on the Hello Arrow page, but you may find this page useful to read before the workshop begins."
+  },
+  {
+    "objectID": "packages-and-data.html#packages",
+    "href": "packages-and-data.html#packages",
+    "title": "Packages and Data",
+    "section": "Packages",
+    "text": "Packages\nTo install the required packages, run the following:\n\ninstall.packages(c(\n  \"arrow\", \"dplyr\", \"dbplyr\", \"duckdb\", \"fs\", \"janitor\",\n  \"palmerpenguins\", \"remotes\", \"scales\", \"stringr\", \n  \"lubridate\", \"tictoc\"\n))\n\nTo load them:\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\n\nThe workshop doesn’t use graphics or spatial data much but they are used on this page and again at the end. Suggested packages if you want to run those parts of the code can be installed with the following:\n\ninstall.packages(c(\"ggplot2\", \"ggrepel\", \"sf\"))\n\nLoad the packages with this:\n\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)"
   },
   {
     "objectID": "packages-and-data.html#data",
@@ -88,21 +109,21 @@
     "href": "data-storage.html#parquet-files",
     "title": "Part 3: Data Storage",
     "section": "Parquet files",
-    "text": "Parquet files\nIf you work with large data sets already, you may have encountered parquet files before and none of this will be new material for you. But for folks new to this world it’s not as well known, so we’ll talk a little about the Apache Parquet project. Although they are both associated with the Apache Software Foundation, and the arrow package is (as far as we know!) the easiest way to work with parquet files, Apache Parquet is an entirely different project to Apache Arrow.\nParquet files structure a tabular data set in a format that is “row-chunked, column-arranged, and paged”. Here’s what we mean by that. First, we take a table and partition it row-wise into a set of distinct “chunks”, as shown below:\n\n\n\n\n\nThen, for every chunk and for every column in each chunk, that column is split into a collection of “pages”:\n\n\n\n\n\nWhen the table is written to disk, we start writing from chunk 1, column 1, writing each page in order. We then repeat this for every column in this chunk; and then move to the next chunk. This continues until every page has been written:\n\n\n\n\n\nImportantly for our purposes each chunk, column, and page is preceded by relevant metadata. In addition, a metadata block is written at the end of the file containing information about the table, and the locations of the various constituent parts.\nThere are two key features to this format that make it desirable when working with large data sets:\n\nParquet file readers can use metadata to scan the file intelligently: if we know in advance that only some subset of the table is needed for a query, the reader can skip to the relevant pages\nData are stored in a compressed binary format, which reduces file size relative to an uncompressed text format such as CSV.\n\nThat being said, you probably won’t be surprised to hear that we’re glossing over a lot of details here. You wouldn’t be able to code a parquet reader on the basis of this simplified description! However, that’s not our goal here: the purpose of this description is to give you enough of a sense of how a parquet file is organized, so you can understand why they’re handy when working with large data! You can find a lot more information about these details in the Apache Parquet documentation.\nA single parquet file generally contains a quantity of data small enough to load into memory. For example, let’s say I want to load the NYC taxi data for September 2019. This subset of the data can be stored in a 122MB parquet file, and I can load the whole thing into R as a conventional data frame. It’s about 6.5 million rows, but that’s not too much of a challenge:\n\nparquet_file <- \"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\nnyc_taxi_2019_09 <- read_parquet(parquet_file)\nnyc_taxi_2019_09\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   <chr>       <dttm>              <dttm>                        <int>\n 1 VTS         2019-09-01 15:14:09 2019-09-01 15:31:52               2\n 2 VTS         2019-09-01 15:36:17 2019-09-01 16:12:44               1\n 3 VTS         2019-09-01 15:29:19 2019-09-01 15:54:13               1\n 4 CMT         2019-09-01 15:33:09 2019-09-01 15:52:14               2\n 5 VTS         2019-09-01 15:57:43 2019-09-01 16:26:21               1\n 6 CMT         2019-09-01 15:59:16 2019-09-01 16:28:12               1\n 7 CMT         2019-09-01 15:20:06 2019-09-01 15:52:19               1\n 8 CMT         2019-09-01 15:27:54 2019-09-01 15:32:56               0\n 9 CMT         2019-09-01 15:35:08 2019-09-01 15:55:51               0\n10 CMT         2019-09-01 15:19:37 2019-09-01 15:30:52               1\n# … with 6,567,386 more rows, and 18 more variables: trip_distance <dbl>,\n#   pickup_longitude <dbl>, pickup_latitude <dbl>, rate_code <chr>,\n#   store_and_fwd <chr>, dropoff_longitude <dbl>, dropoff_latitude <dbl>,\n#   payment_type <chr>, fare_amount <dbl>, extra <dbl>, mta_tax <dbl>,\n#   tip_amount <dbl>, tolls_amount <dbl>, total_amount <dbl>,\n#   improvement_surcharge <dbl>, congestion_surcharge <dbl>,\n#   pickup_location_id <int>, dropoff_location_id <int>\n\n\nOne thing to highlight here is that the columnar structure to parquet files makes it possible to load only a subset of the columns:\n\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\"))\n\n# A tibble: 6,567,396 × 4\n   pickup_datetime     pickup_longitude pickup_latitude pickup_location_id\n   <dttm>                         <dbl>           <dbl>              <int>\n 1 2019-09-01 15:14:09               NA              NA                186\n 2 2019-09-01 15:36:17               NA              NA                138\n 3 2019-09-01 15:29:19               NA              NA                132\n 4 2019-09-01 15:33:09               NA              NA                 79\n 5 2019-09-01 15:57:43               NA              NA                132\n 6 2019-09-01 15:59:16               NA              NA                132\n 7 2019-09-01 15:20:06               NA              NA                132\n 8 2019-09-01 15:27:54               NA              NA                224\n 9 2019-09-01 15:35:08               NA              NA                 79\n10 2019-09-01 15:19:37               NA              NA                 97\n# … with 6,567,386 more rows\n\n\nBetter yet, the file reader is faster when only a subset of the columns is needed\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.639 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.104 sec elapsed\n\n\nThis property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2Solution 3\n\n\n\nLet’s start with some baseline data. Take the data currently stored in nyc_taxi_2019_09 and write it to a CSV file using write_csv_arrow() function supplied by the arrow package. Using the tic() and toc() functions from tictoc package, record how long it took to write the file. Similarly, using the file_size() function from the fs package, see how large the file is.\nRepeat the previous exercise, but this time write the data to a parquet file using write_parquet(). For folks who are new to parquet files: use .parquet as the file extension. How does this compare to the previous exercise?\nTry reading both files into R using read_csv_arrow() and read_parquet(), and compare load times. As a bonus, try the same thing with as_data_frame = FALSE for both files: that way the data will be read into Arrow memory rather than R memory. Is there a difference in elapsed time?\n\n\n\n\ntic()\nwrite_csv_arrow(nyc_taxi_2019_09, \"data/nyc_taxi_2019_09.csv\")\ntoc()\n\n25.553 sec elapsed\n\nfile_size(\"data/nyc_taxi_2019_09.csv\")\n\n940M\n\n\n\n\n\ntic()\nwrite_parquet(nyc_taxi_2019_09, \"data/nyc_taxi_2019_09.parquet\")\ntoc()\n\n2.561 sec elapsed\n\nfile_size(\"data/nyc_taxi_2019_09.parquet\")\n\n125M\n\n\nWriting data from R to a parquet file is faster than writing a CSV file. The end result is much smaller too. The difference in file size is mostly because parquet files are a binary compressed format, whereas CSV files are stored as uncompressed plaintext.\n\n\nRecall that in exercises 1 and 2 I saved the data to \"data/nyc_taxi_2019_09.csv\" and \"data/nyc_taxi_2019_09.parquet\". You may have chosen different file paths!\nThe first part of the problem asks us to read the CSV file and the parquet file into R, and record the time taken:\n\ntic()\n\"data/nyc_taxi_2019_09.csv\" |>\n  read_csv_arrow() |> \n  invisible()\ntoc()\n\n1.603 sec elapsed\n\ntic()\n\"data/nyc_taxi_2019_09.parquet\" |>\n  read_parquet() |> \n    invisible()\ntoc()\n\n0.539 sec elapsed\n\n\nThe parquet file is substantially faster to read.\nThe second part of the problem asks us to repeat the exercise, loading the data as an Arrow Table rather than an R data frame. Here’s how we do that:\n\ntic()\n\"data/nyc_taxi_2019_09.csv\" |>\n  read_csv_arrow(as_data_frame = FALSE) |> \n  invisible()\ntoc()\n\n1.298 sec elapsed\n\ntic()\n\"data/nyc_taxi_2019_09.parquet\" |>\n  read_parquet(as_data_frame = FALSE) |> \n    invisible()\ntoc()\n\n0.557 sec elapsed\n\n\nRead times are fairly similar for Arrow as they are for R. Again, the parquet file is faster than the CSV file."
+    "text": "Parquet files\nIf you work with large data sets already, you may have encountered parquet files before and none of this will be new material for you. But for folks new to this world it’s not as well known, so we’ll talk a little about the Apache Parquet project. Although they are both associated with the Apache Software Foundation, and the arrow package is (as far as we know!) the easiest way to work with parquet files, Apache Parquet is an entirely different project to Apache Arrow.\nParquet files structure a tabular data set in a format that is “row-chunked, column-arranged, and paged”. Here’s what we mean by that. First, we take a table and partition it row-wise into a set of distinct “chunks”, as shown below:\n\n\n\n\n\nThen, for every chunk and for every column in each chunk, that column is split into a collection of “pages”:\n\n\n\n\n\nWhen the table is written to disk, we start writing from chunk 1, column 1, writing each page in order. We then repeat this for every column in this chunk; and then move to the next chunk. This continues until every page has been written:\n\n\n\n\n\nImportantly for our purposes each chunk, column, and page is preceded by relevant metadata. In addition, a metadata block is written at the end of the file containing information about the table, and the locations of the various constituent parts.\nThere are two key features to this format that make it desirable when working with large data sets:\n\nParquet file readers can use metadata to scan the file intelligently: if we know in advance that only some subset of the table is needed for a query, the reader can skip to the relevant pages\nData are stored in a compressed binary format, which reduces file size relative to an uncompressed text format such as CSV.\n\nThat being said, you probably won’t be surprised to hear that we’re glossing over a lot of details here. You wouldn’t be able to code a parquet reader on the basis of this simplified description! However, that’s not our goal here: the purpose of this description is to give you enough of a sense of how a parquet file is organized, so you can understand why they’re handy when working with large data! You can find a lot more information about these details in the Apache Parquet documentation.\nA single parquet file generally contains a quantity of data small enough to load into memory. For example, let’s say I want to load the NYC taxi data for September 2019. This subset of the data can be stored in a 122MB parquet file, and I can load the whole thing into R as a conventional data frame. It’s about 6.5 million rows, but that’s not too much of a challenge:\n\nparquet_file <- \"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\nnyc_taxi_2019_09 <- read_parquet(parquet_file)\nnyc_taxi_2019_09\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   <chr>       <dttm>              <dttm>                        <int>\n 1 VTS         2019-09-01 15:14:09 2019-09-01 15:31:52               2\n 2 VTS         2019-09-01 15:36:17 2019-09-01 16:12:44               1\n 3 VTS         2019-09-01 15:29:19 2019-09-01 15:54:13               1\n 4 CMT         2019-09-01 15:33:09 2019-09-01 15:52:14               2\n 5 VTS         2019-09-01 15:57:43 2019-09-01 16:26:21               1\n 6 CMT         2019-09-01 15:59:16 2019-09-01 16:28:12               1\n 7 CMT         2019-09-01 15:20:06 2019-09-01 15:52:19               1\n 8 CMT         2019-09-01 15:27:54 2019-09-01 15:32:56               0\n 9 CMT         2019-09-01 15:35:08 2019-09-01 15:55:51               0\n10 CMT         2019-09-01 15:19:37 2019-09-01 15:30:52               1\n# … with 6,567,386 more rows, and 18 more variables: trip_distance <dbl>,\n#   pickup_longitude <dbl>, pickup_latitude <dbl>, rate_code <chr>,\n#   store_and_fwd <chr>, dropoff_longitude <dbl>, dropoff_latitude <dbl>,\n#   payment_type <chr>, fare_amount <dbl>, extra <dbl>, mta_tax <dbl>,\n#   tip_amount <dbl>, tolls_amount <dbl>, total_amount <dbl>,\n#   improvement_surcharge <dbl>, congestion_surcharge <dbl>,\n#   pickup_location_id <int>, dropoff_location_id <int>\n\n\nOne thing to highlight here is that the columnar structure to parquet files makes it possible to load only a subset of the columns:\n\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\"))\n\n# A tibble: 6,567,396 × 4\n   pickup_datetime     pickup_longitude pickup_latitude pickup_location_id\n   <dttm>                         <dbl>           <dbl>              <int>\n 1 2019-09-01 15:14:09               NA              NA                186\n 2 2019-09-01 15:36:17               NA              NA                138\n 3 2019-09-01 15:29:19               NA              NA                132\n 4 2019-09-01 15:33:09               NA              NA                 79\n 5 2019-09-01 15:57:43               NA              NA                132\n 6 2019-09-01 15:59:16               NA              NA                132\n 7 2019-09-01 15:20:06               NA              NA                132\n 8 2019-09-01 15:27:54               NA              NA                224\n 9 2019-09-01 15:35:08               NA              NA                 79\n10 2019-09-01 15:19:37               NA              NA                 97\n# … with 6,567,386 more rows\n\n\nBetter yet, the file reader is faster when only a subset of the columns is needed\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.867 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.165 sec elapsed\n\n\nThis property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2Solution 3\n\n\n\nLet’s start with some baseline data. Take the data currently stored in nyc_taxi_2019_09 and write it to a CSV file using write_csv_arrow() function supplied by the arrow package. Using the tic() and toc() functions from tictoc package, record how long it took to write the file. Similarly, using the file_size() function from the fs package, see how large the file is.\nRepeat the previous exercise, but this time write the data to a parquet file using write_parquet(). For folks who are new to parquet files: use .parquet as the file extension. How does this compare to the previous exercise?\nTry reading both files into R using read_csv_arrow() and read_parquet(), and compare load times. As a bonus, try the same thing with as_data_frame = FALSE for both files: that way the data will be read into Arrow memory rather than R memory. Is there a difference in elapsed time?\n\n\n\n\ntic()\nwrite_csv_arrow(nyc_taxi_2019_09, \"data/nyc_taxi_2019_09.csv\")\ntoc()\n\n25.553 sec elapsed\n\nfile_size(\"data/nyc_taxi_2019_09.csv\")\n\n940M\n\n\n\n\n\ntic()\nwrite_parquet(nyc_taxi_2019_09, \"data/nyc_taxi_2019_09.parquet\")\ntoc()\n\n2.561 sec elapsed\n\nfile_size(\"data/nyc_taxi_2019_09.parquet\")\n\n125M\n\n\nWriting data from R to a parquet file is faster than writing a CSV file. The end result is much smaller too. The difference in file size is mostly because parquet files are a binary compressed format, whereas CSV files are stored as uncompressed plaintext.\n\n\nRecall that in exercises 1 and 2 I saved the data to \"data/nyc_taxi_2019_09.csv\" and \"data/nyc_taxi_2019_09.parquet\". You may have chosen different file paths!\nThe first part of the problem asks us to read the CSV file and the parquet file into R, and record the time taken:\n\ntic()\n\"data/nyc_taxi_2019_09.csv\" |>\n  read_csv_arrow() |> \n  invisible()\ntoc()\n\n1.603 sec elapsed\n\ntic()\n\"data/nyc_taxi_2019_09.parquet\" |>\n  read_parquet() |> \n    invisible()\ntoc()\n\n0.539 sec elapsed\n\n\nThe parquet file is substantially faster to read.\nThe second part of the problem asks us to repeat the exercise, loading the data as an Arrow Table rather than an R data frame. Here’s how we do that:\n\ntic()\n\"data/nyc_taxi_2019_09.csv\" |>\n  read_csv_arrow(as_data_frame = FALSE) |> \n  invisible()\ntoc()\n\n1.298 sec elapsed\n\ntic()\n\"data/nyc_taxi_2019_09.parquet\" |>\n  read_parquet(as_data_frame = FALSE) |> \n    invisible()\ntoc()\n\n0.557 sec elapsed\n\n\nRead times are fairly similar for Arrow as they are for R. Again, the parquet file is faster than the CSV file."
   },
   {
     "objectID": "data-storage.html#multi-file-data-sets",
     "href": "data-storage.html#multi-file-data-sets",
     "title": "Part 3: Data Storage",
     "section": "Multi-file data sets",
-    "text": "Multi-file data sets\nIn our hands-on exercises we’ve been working with the NYC Taxi data, a single tabular data set that is split across 158 distinct parquet files. It’s time to take a closer look at how this works. Let’s start by opening the data:\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi/\")\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\n...\n\n\nThe ... in the output indicates truncation: I’m only showing the first few lines of output because it’s the first line that’s important. The nyc_taxi object is an Arrow Dataset represented by 158 files. We can inspect the files field of this object to find the paths to these files:\n\nnyc_taxi$files\n\n  [1] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet\" \n  [2] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet\"\n  [3] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=11/part-0.parquet\"\n  [4] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=12/part-0.parquet\"\n  [5] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=2/part-0.parquet\" \n...\n\n\nNotice that the filenames are structured. They’re organised by year and month and – as you might expect – the data for September 2016 can be found in the year=2016/month=9/ folder. Not only that, the folder names correspond to actual field-value pairings in the data. The nyc_taxi data set has variables named year and month, and those variables can take values 2016 and 9 respectively. This convention, in which folders are named using the relevant filed-value pairs, is referred to as “Hive partitioning”, based on the Apache Hive project.\nPartitioning the data set in a thoughtful way is one of those tricks used to make large data sets manageable. If I want to compute some quantity based only on the rides that took place in September 2019, I can ask the operating system to open the one file containing that data. My query never has to touch the other 157 files. To give a sense of how much of a difference this makes, let’s compare two different queries. The first one extracts a subset of about 10 million rows, based on the partitioning variables:\n\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow()\n\n[1] 10116018\n\n\nThe second one extracts a subset of about the same size, again about 10 million rows, based on the pickup location zone:\n\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow()\n\n[1] 10823589\n\n\nNeither of these queries do very much with the data: they’re just inspecting the metadata to count the number of rows. However, the first query only needs to look at the metadata in one file, whereas the second one has to extract and aggregate data from all 158 files. The difference in compute time is striking:\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() |>\n  invisible()\ntoc()\n\n0.013 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() |> \n  invisible()\ntoc()\n\n2.914 sec elapsed\n\n\nAdmittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.\nThis leads to a natural question: how many variables should we partition on? The nyc_taxi data set is partitioned on year and month, but there’s nothing stopping us from defining a weekday variable that takes on values of Sunday, Monday, etc, and using that to define a third level of partitioning. Or we could have chosen to drop month entirely and partition only on year. Which approach is best?\nThe answer, boringly, is that it depends. As a general rule, if you break the data up into too many small data sets, the operating system has to do too much work searching for the files you want; too few, and you end up with some very large and unwieldy files that are hard to move around and search. So there’s often a sweet spot where you partition based on small number of variables (usually those that are used most often in queries) and end up with a manageable number of files of a manageable size. These rough guidelines can help avoid some known worst cases:\n\nAvoid files smaller than 20MB and larger than 2GB.\nAvoid partitioning layouts with more than 10,000 distinct partitions.\n\nAs an aside, you can apply the same guidelines when thinking about how to structure groups within file types such as parquet that have a notion of row chunks etc, because the same tradeoffs exist there."
+    "text": "Multi-file data sets\nIn our hands-on exercises we’ve been working with the NYC Taxi data, a single tabular data set that is split across 158 distinct parquet files. It’s time to take a closer look at how this works. Let’s start by opening the data:\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi/\")\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\n...\n\n\nThe ... in the output indicates truncation: I’m only showing the first few lines of output because it’s the first line that’s important. The nyc_taxi object is an Arrow Dataset represented by 158 files. We can inspect the files field of this object to find the paths to these files:\n\nnyc_taxi$files\n\n  [1] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet\" \n  [2] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet\"\n  [3] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=11/part-0.parquet\"\n  [4] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=12/part-0.parquet\"\n  [5] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=2/part-0.parquet\" \n...\n\n\nNotice that the filenames are structured. They’re organised by year and month and – as you might expect – the data for September 2016 can be found in the year=2016/month=9/ folder. Not only that, the folder names correspond to actual field-value pairings in the data. The nyc_taxi data set has variables named year and month, and those variables can take values 2016 and 9 respectively. This convention, in which folders are named using the relevant filed-value pairs, is referred to as “Hive partitioning”, based on the Apache Hive project.\nPartitioning the data set in a thoughtful way is one of those tricks used to make large data sets manageable. If I want to compute some quantity based only on the rides that took place in September 2019, I can ask the operating system to open the one file containing that data. My query never has to touch the other 157 files. To give a sense of how much of a difference this makes, let’s compare two different queries. The first one extracts a subset of about 10 million rows, based on the partitioning variables:\n\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow()\n\n[1] 10116018\n\n\nThe second one extracts a subset of about the same size, again about 10 million rows, based on the pickup location zone:\n\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow()\n\n[1] 10823589\n\n\nNeither of these queries do very much with the data: they’re just inspecting the metadata to count the number of rows. However, the first query only needs to look at the metadata in one file, whereas the second one has to extract and aggregate data from all 158 files. The difference in compute time is striking:\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() |>\n  invisible()\ntoc()\n\n0.026 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() |> \n  invisible()\ntoc()\n\n4.203 sec elapsed\n\n\nAdmittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.\nThis leads to a natural question: how many variables should we partition on? The nyc_taxi data set is partitioned on year and month, but there’s nothing stopping us from defining a weekday variable that takes on values of Sunday, Monday, etc, and using that to define a third level of partitioning. Or we could have chosen to drop month entirely and partition only on year. Which approach is best?\nThe answer, boringly, is that it depends. As a general rule, if you break the data up into too many small data sets, the operating system has to do too much work searching for the files you want; too few, and you end up with some very large and unwieldy files that are hard to move around and search. So there’s often a sweet spot where you partition based on small number of variables (usually those that are used most often in queries) and end up with a manageable number of files of a manageable size. These rough guidelines can help avoid some known worst cases:\n\nAvoid files smaller than 20MB and larger than 2GB.\nAvoid partitioning layouts with more than 10,000 distinct partitions.\n\nAs an aside, you can apply the same guidelines when thinking about how to structure groups within file types such as parquet that have a notion of row chunks etc, because the same tradeoffs exist there."
   },
   {
     "objectID": "data-storage.html#an-example",
     "href": "data-storage.html#an-example",
     "title": "Part 3: Data Storage",
     "section": "An example",
-    "text": "An example\nOkay, enough theory. Let’s actually do this. We’ve already seen the “read” functionality in action, but I’m going to do it again with some additional arguments specified. This time around, I’m going to open a smaller subset, corresponding only to the 2016 data:\n\nnyc_taxi_2016a <- open_dataset(\n  sources = \"~/Datasets/nyc-taxi/year=2016/\",\n  format = \"parquet\",\n  unify_schemas = TRUE\n)\n\nIn this version of the command I’ve explicitly stated that I’m looking for parquet files, though I didn’t really need to do this because format = \"parquet\" is the default. I’ve also set unify_schemas to TRUE rather than the default value of FALSE. What this argument refers to is the way open_dataset() aggregates the data files. When unify_schemas = TRUE, it examines every data file to find names and data types for each column (i.e., the schema for the data set), and then seeks to aggregate those into a coherent whole. This can be time consuming, and is usually unnecessary because the data are written in the exact same format in every file. As a consequence, when unify_schemas = FALSE (the default), the scanner will just look at the first file and assume that every data file has the same schema.\nOkay, so let’s have a look at the data:\n\nnyc_taxi_2016a\n\nFileSystemDataset with 12 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\n...\n\n\nAs expected, this is a multi-file Dataset object constructed from 12 files.\nNext, let’s imagine that we’re about to write an application whose primary function is to look at the different vendors who provide the raw data on a monthly basis. That’s a highly specialized use of this data set, and it may be advantageous to partition by month and vendor_name because those are the variables we’re likely to be querying on later. Because the philosophy of the arrow package is to try to preserve dplyr logic to the greatest possible extent, the default behaviour of write_dataset() is to inspect the grouping variables for the data and use those to construct a Hive-style partition. So if I want to write this Dataset to file using month and vendor as my partitioning variables I would do this:\n\ntic()\nnyc_taxi_2016a |> \n  group_by(month, vendor_name) |>\n  write_dataset(\"~/Datasets/nyc-taxi_2016\")\ntoc()\n\n39.782 sec elapsed\n\n\nAs you can see, this write operation does take a little while to finish, but half a minute isn’t too bad.\nIn any case, I can open the new data set the same way as before:\n\nnyc_taxi_2016b <- open_dataset(\"~/Datasets/nyc-taxi_2016\")\nnyc_taxi_2016b\n\nFileSystemDataset with 27 Parquet files\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\n...\n\n\nNotice the difference between nyc_taxi_2016a and nyc_taxi_2016b. The both refer to the same data conceptually (i.e., all the taxi rides from 2016), but they’re linked to different files and they carve up the dataset in different ways:\n\nnyc_taxi_2016a$files\n\n [1] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=1/part-0.parquet\" \n [2] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=10/part-0.parquet\"\n [3] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=11/part-0.parquet\"\n [4] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=12/part-0.parquet\"\n [5] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=2/part-0.parquet\" \n...\n\n\n\nnyc_taxi_2016b$files\n\n [1] \"/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=CMT/part-0.parquet\"                       \n [2] \"/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=VTS/part-0.parquet\"                       \n [3] \"/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=CMT/part-0.parquet\"                      \n [4] \"/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=VTS/part-0.parquet\"                      \n [5] \"/home/danielle/Datasets/nyc-taxi_2016/month=11/vendor_name=CMT/part-0.parquet\"                      \n...\n\n\nTo give you a sense of the difference between the two, here’s an example of a (somewhat) realistic query, computed on the nyc_taxi_2016b data:\n\nnyc_taxi_2016b |> \n  filter(vendor_name == \"CMT\") |>\n  group_by(month) |>\n  summarize(distance = sum(trip_distance, na.rm = TRUE)) |>\n  collect()\n\n# A tibble: 12 × 2\n   month  distance\n   <int>     <dbl>\n 1     1 33436823.\n 2    11 13826243.\n 3    12 13642500.\n 4    10 41799496.\n 5     2 40006137.\n 6     3 55384892.\n 7     4 27440575.\n 8     5 52798627.\n 9     6 15617981.\n10     7 19210103.\n11     8 22581320.\n12     9 76139235.\n\n\nHere’s the time taken for this query:\n\n\n0.526 sec elapsed\n\n\nand for the same query performed on the nyc_taxi_2016a data:\n\n\n1.708 sec elapsed\n\n\nThe difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2Solution 3\n\n\n\n(Preliminary) Write a query that picks out the 2019 NYC Taxi data and – in addition to the month and year columns already existing in the data – adds columns for monthday and yearday specifying the day of the month and the day of the year on which the pickup took place (note: lubridate functions day() and yday() are both supported). Check that your query works by selecting the pickup_datetime column and your newly-created monthday and yearday columns and then collecting the first few rows.\nUsing this query, write the 2019 NYC Taxi data to a multi-file dataset – twice. The first time you do it, partition by month and monthday. The second time you do it, partition by yearday. Notice that both of these produce 365 files, each of which contain the exact same subset of data!\nUsing only the datasets that you have just written to disk (i.e., you’ll have to reopen them using open_dataset()), calculate the total amount of money charged (as measured by the total_amount variable) each day, for the 81st through 90th day of the year (using the yearday variable). Do this for both versions of the dataset that you just created, and record how long it took to finish in both cases. What do you notice?\n\n\n\nThe query:\n\nnyc_taxi_2019_days <- nyc_taxi |> \n  filter(year == 2019) |>\n  mutate(\n    monthday = day(pickup_datetime),\n    yearday = yday(pickup_datetime)\n  )\n\nThe check:\n\nnyc_taxi_2019_days |>\n  select(pickup_datetime, monthday, yearday) |>\n  head() |> \n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     monthday yearday\n  <dttm>                 <int>   <int>\n1 2019-10-02 06:41:22        1     274\n2 2019-10-02 06:53:46        1     274\n3 2019-10-02 06:05:22        1     274\n4 2019-10-02 06:19:59        1     274\n5 2019-10-02 06:45:45        1     274\n6 2019-10-02 06:03:44        1     274\n\n\n\n\n\ntic()\nnyc_taxi_2019_days |>\n  group_by(month, monthday) |>\n  write_dataset(\"data/nyc_taxi_2019_monthday\")\ntoc()\n\n27.536 sec elapsed\n\ntic()\nnyc_taxi_2019_days |>\n  group_by(yearday) |>\n  write_dataset(\"data/nyc_taxi_2019_yearday\")\ntoc()\n\n27.183 sec elapsed\n\n\n\n\nFirst, we’ll open the two datasets:\n\nnyc_taxi_2019_monthday <- open_dataset(\"data/nyc_taxi_2019_monthday\")\nnyc_taxi_2019_yearday <- open_dataset(\"data/nyc_taxi_2019_yearday\")\n\nHere’s the solution for the month/day version:\n\ntic()\nnyc_taxi_2019_monthday |>\n  filter(yearday %in% 81:90) |>\n  group_by(yearday) |>\n  summarize(gross = sum(total_amount)) |>\n  collect()\n\n# A tibble: 10 × 2\n   yearday    gross\n     <int>    <dbl>\n 1      86 4877420.\n 2      88 4968074.\n 3      87 5115909.\n 4      90 4186767.\n 5      83 4106132.\n 6      82 4578253.\n 7      81 5314584.\n 8      84 4152380.\n 9      85 4611179.\n10      89 4580226.\n\ntoc()\n\n0.347 sec elapsed\n\n\nRepeating the same exercises for the yearday version:\n\ntic()\nnyc_taxi_2019_yearday |>\n  filter(yearday %in% 81:90) |>\n  group_by(yearday) |>\n  summarize(gross = sum(total_amount)) |>\n  collect()\n\n# A tibble: 10 × 2\n   yearday    gross\n     <int>    <dbl>\n 1      83 4106132.\n 2      85 4611179.\n 3      87 5115909.\n 4      88 4968074.\n 5      90 4186767.\n 6      89 4580226.\n 7      81 5314584.\n 8      84 4152380.\n 9      82 4578253.\n10      86 4877420.\n\ntoc()\n\n0.098 sec elapsed\n\n\nThe difference is… not subtle."
+    "text": "An example\nOkay, enough theory. Let’s actually do this. We’ve already seen the “read” functionality in action, but I’m going to do it again with some additional arguments specified. This time around, I’m going to open a smaller subset, corresponding only to the 2016 data:\n\nnyc_taxi_2016a <- open_dataset(\n  sources = \"~/Datasets/nyc-taxi/year=2016/\",\n  format = \"parquet\",\n  unify_schemas = TRUE\n)\n\nIn this version of the command I’ve explicitly stated that I’m looking for parquet files, though I didn’t really need to do this because format = \"parquet\" is the default. I’ve also set unify_schemas to TRUE rather than the default value of FALSE. What this argument refers to is the way open_dataset() aggregates the data files. When unify_schemas = TRUE, it examines every data file to find names and data types for each column (i.e., the schema for the data set), and then seeks to aggregate those into a coherent whole. This can be time consuming, and is usually unnecessary because the data are written in the exact same format in every file. As a consequence, when unify_schemas = FALSE (the default), the scanner will just look at the first file and assume that every data file has the same schema.\nOkay, so let’s have a look at the data:\n\nnyc_taxi_2016a\n\nFileSystemDataset with 12 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\n...\n\n\nAs expected, this is a multi-file Dataset object constructed from 12 files.\nNext, let’s imagine that we’re about to write an application whose primary function is to look at the different vendors who provide the raw data on a monthly basis. That’s a highly specialized use of this data set, and it may be advantageous to partition by month and vendor_name because those are the variables we’re likely to be querying on later. Because the philosophy of the arrow package is to try to preserve dplyr logic to the greatest possible extent, the default behaviour of write_dataset() is to inspect the grouping variables for the data and use those to construct a Hive-style partition. So if I want to write this Dataset to file using month and vendor as my partitioning variables I would do this:\n\ntic()\nnyc_taxi_2016a |> \n  group_by(month, vendor_name) |>\n  write_dataset(\"~/Datasets/nyc-taxi_2016\")\ntoc()\n\n39.782 sec elapsed\n\n\nAs you can see, this write operation does take a little while to finish, but half a minute isn’t too bad.\nIn any case, I can open the new data set the same way as before:\n\nnyc_taxi_2016b <- open_dataset(\"~/Datasets/nyc-taxi_2016\")\nnyc_taxi_2016b\n\nFileSystemDataset with 27 Parquet files\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\n...\n\n\nNotice the difference between nyc_taxi_2016a and nyc_taxi_2016b. The both refer to the same data conceptually (i.e., all the taxi rides from 2016), but they’re linked to different files and they carve up the dataset in different ways:\n\nnyc_taxi_2016a$files\n\n [1] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=1/part-0.parquet\" \n [2] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=10/part-0.parquet\"\n [3] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=11/part-0.parquet\"\n [4] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=12/part-0.parquet\"\n [5] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=2/part-0.parquet\" \n...\n\n\n\nnyc_taxi_2016b$files\n\n [1] \"/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=CMT/part-0.parquet\"                       \n [2] \"/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=VTS/part-0.parquet\"                       \n [3] \"/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=CMT/part-0.parquet\"                      \n [4] \"/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=VTS/part-0.parquet\"                      \n [5] \"/home/danielle/Datasets/nyc-taxi_2016/month=11/vendor_name=CMT/part-0.parquet\"                      \n...\n\n\nTo give you a sense of the difference between the two, here’s an example of a (somewhat) realistic query, computed on the nyc_taxi_2016b data:\n\nnyc_taxi_2016b |> \n  filter(vendor_name == \"CMT\") |>\n  group_by(month) |>\n  summarize(distance = sum(trip_distance, na.rm = TRUE)) |>\n  collect()\n\n# A tibble: 12 × 2\n   month  distance\n   <int>     <dbl>\n 1     1 33436823.\n 2    11 13826243.\n 3    12 13642500.\n 4    10 41799496.\n 5     4 27440575.\n 6     2 40006137.\n 7     3 55384892.\n 8     5 52798627.\n 9     6 15617981.\n10     9 76139235.\n11     8 22581320.\n12     7 19210103.\n\n\nHere’s the time taken for this query:\n\n\n0.803 sec elapsed\n\n\nand for the same query performed on the nyc_taxi_2016a data:\n\n\n2.811 sec elapsed\n\n\nThe difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!\n\n\n\n\n\n\nExercises\n\n\n\n\nProblemsSolution 1Solution 2Solution 3\n\n\n\n(Preliminary) Write a query that picks out the 2019 NYC Taxi data and – in addition to the month and year columns already existing in the data – adds columns for monthday and yearday specifying the day of the month and the day of the year on which the pickup took place (note: lubridate functions day() and yday() are both supported). Check that your query works by selecting the pickup_datetime column and your newly-created monthday and yearday columns and then collecting the first few rows.\nUsing this query, write the 2019 NYC Taxi data to a multi-file dataset – twice. The first time you do it, partition by month and monthday. The second time you do it, partition by yearday. Notice that both of these produce 365 files, each of which contain the exact same subset of data!\nUsing only the datasets that you have just written to disk (i.e., you’ll have to reopen them using open_dataset()), calculate the total amount of money charged (as measured by the total_amount variable) each day, for the 81st through 90th day of the year (using the yearday variable). Do this for both versions of the dataset that you just created, and record how long it took to finish in both cases. What do you notice?\n\n\n\nThe query:\n\nnyc_taxi_2019_days <- nyc_taxi |> \n  filter(year == 2019) |>\n  mutate(\n    monthday = day(pickup_datetime),\n    yearday = yday(pickup_datetime)\n  )\n\nThe check:\n\nnyc_taxi_2019_days |>\n  select(pickup_datetime, monthday, yearday) |>\n  head() |> \n  collect()\n\n# A tibble: 6 × 3\n  pickup_datetime     monthday yearday\n  <dttm>                 <int>   <int>\n1 2019-12-01 12:39:20        1     335\n2 2019-12-01 12:07:55        1     335\n3 2019-12-01 12:22:44        1     335\n4 2019-12-01 12:38:48        1     335\n5 2019-12-01 12:13:21        1     335\n6 2019-12-01 12:39:52        1     335\n\n\n\n\n\ntic()\nnyc_taxi_2019_days |>\n  group_by(month, monthday) |>\n  write_dataset(\"data/nyc_taxi_2019_monthday\")\ntoc()\n\n27.536 sec elapsed\n\ntic()\nnyc_taxi_2019_days |>\n  group_by(yearday) |>\n  write_dataset(\"data/nyc_taxi_2019_yearday\")\ntoc()\n\n27.183 sec elapsed\n\n\n\n\nFirst, we’ll open the two datasets:\n\nnyc_taxi_2019_monthday <- open_dataset(\"data/nyc_taxi_2019_monthday\")\nnyc_taxi_2019_yearday <- open_dataset(\"data/nyc_taxi_2019_yearday\")\n\nHere’s the solution for the month/day version:\n\ntic()\nnyc_taxi_2019_monthday |>\n  filter(yearday %in% 81:90) |>\n  group_by(yearday) |>\n  summarize(gross = sum(total_amount)) |>\n  collect()\n\n# A tibble: 10 × 2\n   yearday    gross\n     <int>    <dbl>\n 1      86 4877420.\n 2      88 4968074.\n 3      87 5115909.\n 4      90 4186767.\n 5      83 4106132.\n 6      82 4578253.\n 7      81 5314584.\n 8      84 4152380.\n 9      85 4611179.\n10      89 4580226.\n\ntoc()\n\n0.347 sec elapsed\n\n\nRepeating the same exercises for the yearday version:\n\ntic()\nnyc_taxi_2019_yearday |>\n  filter(yearday %in% 81:90) |>\n  group_by(yearday) |>\n  summarize(gross = sum(total_amount)) |>\n  collect()\n\n# A tibble: 10 × 2\n   yearday    gross\n     <int>    <dbl>\n 1      83 4106132.\n 2      85 4611179.\n 3      87 5115909.\n 4      88 4968074.\n 5      90 4186767.\n 6      89 4580226.\n 7      81 5314584.\n 8      84 4152380.\n 9      82 4578253.\n10      86 4877420.\n\ntoc()\n\n0.098 sec elapsed\n\n\nThe difference is… not subtle."
   },
   {
     "objectID": "index.html",
@@ -158,6 +179,678 @@
     "href": "data-wrangling.html#combining-arrow-with-duckdb",
     "title": "Part 2: Data Wrangling with Arrow",
     "section": "Combining arrow with duckdb",
-    "text": "Combining arrow with duckdb\nAt the start of the workshop we emphasized the point that Arrow aims to be a multi-language toolbox that makes it easier to connect analytics applications. Here’s an example: DuckDB.\nIf you’re not familiar with it, DuckDB is a lightweight database system designed specifically for analytics. It’s serverless, has no external dependencies, and if you want to use it with R all you have to do is install the duckdb package with install.packages(\"duckdb\"). Think of it as like SQLite, with a major exception: it’s intended to support analytics workflows (fewer queries, but computationally expensive ones) rather than transactional ones (many queries that touch only a small part of the database). For the kind of workflows a data scientist tends to engage in, it’s usually much faster than SQLite. Plus, it comes with Arrow support, and consequently the arrow and duckdb packages play very nicely together.\nHere’s how it works: First, notice DuckDB is an SQL database, and you can interact with it from R using dbplyr. Second, notice that DuckDB understands Arrow formats, so we can pass control of a dataset from the Arrow C++ library to DuckDB simply by passing pointers: there’s no copying involved. These two things together are what allow the arrow package to supply two very handy functions, to_duckdb() and to_arrow(). What these do, in effect, is allow you to switch out one engine for the other in the middle of a data analysis pipeline at almost zero cost!\n\n\n\n\n\nThis can be remarkably powerful. There are some operations that are supported by DuckDB but not currently available in the Arrow compute engine, and vice versa. So it’s easy just flip back and forth between them whenever you need to.\n(As an aside, if you’re like me this feels… wrong. Under normal circumstances you’d think it’s absurdly wasteful to completely swap out the back end engine just to get access to a couple of handy functions, but that’s because we’re all so used to a mental model in which serialization costs are pervasive. We’ve all internalized the idea that switching costs are really, really big. But in this case all we’re really doing is passing a little bit of metadata between two processes that both understand Arrow and dplyr so it’s really not a big deal)\n\nExample 7: Window functions\nOkay let’s start with a simple example that intuitively you’d think should work, and I’ll use the penguins data from the palmerpenguins package again. I’m going to add a column specifying the row number, filter out some observations, and select a few columns. Nothing fancy, and if I do it natively in R, everything works fine:\n\npenguins |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# A tibble: 11 × 4\n      id sex   species island   \n   <int> <fct> <fct>   <fct>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n11   272 <NA>  Gentoo  Biscoe   \n\n\nOkay let’s imagine I’m doing all this in Arrow. I’ll add an arrow_table() step at the top of the pipeline so that all the subsequent steps are being done using an Arrow table not an R data frame, and…\n\npenguins |> \n  arrow_table() |> \n  mutate(id = row_number()) |> # oh no!\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\nWarning: Expression row_number() not supported in Arrow; pulling data into R\n\n\n…it doesn’t work. The row_number() function is not currently understood by the Arrow back end. In fact, this is a special case of a general issue: engine supplied by the Arrow C++ library doesn’t currently support window functions, and as a consequence the arrow R package can’t do much to help. However, the DuckDB engine does support window functions, so all we have to do is pass control over to_duckdb():\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows\n\n\nIt all works now.\n\n\nExample 8: Something bigger!\nThe example you’ve just seen highlights the basic idea but it’s tiny: a 344 row data set doesn’t really need Arrow at all. So let’s scale this up a little! Let’s suppose I’m working with the NYC taxi data for January 2022 and I’ve opened it as an Arrow dataset:\n\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\n\nIt’s small relative to the full taxi data, but it’s still two and a half million rows. Large enough that to potentially cause headaches if we aren’t cautious:\n\nnyc_taxi_jan$num_rows \n\n[1] 2463879\n\n\nNow let’s give ourselves a slightly weird “numerological” task: we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, and the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a “magic number” that removes all the digits from the rank that are not 5 or 9. This would be a little tricky with arrow and dplyr alone, but not too difficult with duckdb and dbplyr:\n\ntic()\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.559 sec elapsed\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows\n\n\n\n\n\n\n\n\nResources on Arrow/DuckDB integration\n\n\n\nIf you’re interested in following up on this topic, a good place to start is with the Bigger data with arrow and duckdb slides prepared by Thomas Mock and Edgar Ruiz"
+    "text": "Combining arrow with duckdb\nAt the start of the workshop we emphasized the point that Arrow aims to be a multi-language toolbox that makes it easier to connect analytics applications. Here’s an example: DuckDB.\nIf you’re not familiar with it, DuckDB is a lightweight database system designed specifically for analytics. It’s serverless, has no external dependencies, and if you want to use it with R all you have to do is install the duckdb package with install.packages(\"duckdb\"). Think of it as like SQLite, with a major exception: it’s intended to support analytics workflows (fewer queries, but computationally expensive ones) rather than transactional ones (many queries that touch only a small part of the database). For the kind of workflows a data scientist tends to engage in, it’s usually much faster than SQLite. Plus, it comes with Arrow support, and consequently the arrow and duckdb packages play very nicely together.\nHere’s how it works: First, notice DuckDB is an SQL database, and you can interact with it from R using dbplyr. Second, notice that DuckDB understands Arrow formats, so we can pass control of a dataset from the Arrow C++ library to DuckDB simply by passing pointers: there’s no copying involved. These two things together are what allow the arrow package to supply two very handy functions, to_duckdb() and to_arrow(). What these do, in effect, is allow you to switch out one engine for the other in the middle of a data analysis pipeline at almost zero cost!\n\n\n\n\n\nThis can be remarkably powerful. There are some operations that are supported by DuckDB but not currently available in the Arrow compute engine, and vice versa. So it’s easy just flip back and forth between them whenever you need to.\n(As an aside, if you’re like me this feels… wrong. Under normal circumstances you’d think it’s absurdly wasteful to completely swap out the back end engine just to get access to a couple of handy functions, but that’s because we’re all so used to a mental model in which serialization costs are pervasive. We’ve all internalized the idea that switching costs are really, really big. But in this case all we’re really doing is passing a little bit of metadata between two processes that both understand Arrow and dplyr so it’s really not a big deal)\n\nExample 7: Window functions\nOkay let’s start with a simple example that intuitively you’d think should work, and I’ll use the penguins data from the palmerpenguins package again. I’m going to add a column specifying the row number, filter out some observations, and select a few columns. Nothing fancy, and if I do it natively in R, everything works fine:\n\npenguins |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# A tibble: 11 × 4\n      id sex   species island   \n   <int> <fct> <fct>   <fct>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n11   272 <NA>  Gentoo  Biscoe   \n\n\nOkay let’s imagine I’m doing all this in Arrow. I’ll add an arrow_table() step at the top of the pipeline so that all the subsequent steps are being done using an Arrow table not an R data frame, and…\n\npenguins |> \n  arrow_table() |> \n  mutate(id = row_number()) |> # oh no!\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\nWarning: Expression row_number() not supported in Arrow; pulling data into R\n\n\n…it doesn’t work. The row_number() function is not currently understood by the Arrow back end. In fact, this is a special case of a general issue: engine supplied by the Arrow C++ library doesn’t currently support window functions, and as a consequence the arrow R package can’t do much to help. However, the DuckDB engine does support window functions, so all we have to do is pass control over to_duckdb():\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows\n\n\nIt all works now.\n\n\nExample 8: Something bigger!\nThe example you’ve just seen highlights the basic idea but it’s tiny: a 344 row data set doesn’t really need Arrow at all. So let’s scale this up a little! Let’s suppose I’m working with the NYC taxi data for January 2022 and I’ve opened it as an Arrow dataset:\n\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\n\nIt’s small relative to the full taxi data, but it’s still two and a half million rows. Large enough that to potentially cause headaches if we aren’t cautious:\n\nnyc_taxi_jan$num_rows \n\n[1] 2463879\n\n\nNow let’s give ourselves a slightly weird “numerological” task: we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, and the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a “magic number” that removes all the digits from the rank that are not 5 or 9. This would be a little tricky with arrow and dplyr alone, but not too difficult with duckdb and dbplyr:\n\ntic()\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.72 sec elapsed\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows\n\n\n\n\n\n\n\n\nResources on Arrow/DuckDB integration\n\n\n\nIf you’re interested in following up on this topic, a good place to start is with the Bigger data with arrow and duckdb slides prepared by Thomas Mock and Edgar Ruiz"
+  },
+  {
+    "objectID": "slides.html#packages",
+    "href": "slides.html#packages",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Packages",
+    "text": "Packages\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)"
+  },
+  {
+    "objectID": "slides.html#opening-a-data-set",
+    "href": "slides.html#opening-a-data-set",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Opening a data set",
+    "text": "Opening a data set\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi\")\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "slides.html#opening-a-data-set-1",
+    "href": "slides.html#opening-a-data-set-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Opening a data set",
+    "text": "Opening a data set\n\nnyc_taxi |>\n  head() |>\n  collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\nnyc_taxi |>\n  nrow()\n\n[1] 1672590319\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look",
+    "href": "slides.html#first-look",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look",
+    "text": "First look\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#first-look-1",
+    "href": "slides.html#first-look-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look",
+    "text": "First look\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-rows",
+    "href": "slides.html#first-look-at-the-taxi-data-rows",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: rows",
+    "text": "First look at the taxi data: rows\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-head",
+    "href": "slides.html#first-look-at-the-taxi-data-head",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: head()",
+    "text": "First look at the taxi data: head()\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-rrow",
+    "href": "slides.html#first-look-at-the-taxi-data-rrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: rrow()",
+    "text": "First look at the taxi data: rrow()\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-nrow",
+    "href": "slides.html#nyc-taxi-data-nrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: nrow()",
+    "text": "NYC taxi data: nrow()\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-head",
+    "href": "slides.html#nyc-taxi-data-head",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: head()",
+    "text": "NYC taxi data: head()\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-dplyr-pipeline",
+    "href": "slides.html#nyc-taxi-data-dplyr-pipeline",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: dplyr pipeline",
+    "text": "NYC taxi data: dplyr pipeline\n\nuse filter() to restrict data to 2017:2021\nuse group_by() to aggregate by year\nuse summarize() to count total and shared trips\nuse mutate() to compute percent of trips shared\nuse collect() to trigger execution"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-dplyr-pipeline-1",
+    "href": "slides.html#nyc-taxi-data-dplyr-pipeline-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: dplyr pipeline",
+    "text": "NYC taxi data: dplyr pipeline\n\nnyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4"
+  },
+  {
+    "objectID": "slides.html#exercises",
+    "href": "slides.html#exercises",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Exercises",
+    "text": "Exercises\n\nCalculate total number of rides for each month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month. Sort the results in month order"
+  },
+  {
+    "objectID": "slides.html#problems",
+    "href": "slides.html#problems",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Problems",
+    "text": "Problems\n\nCalculate the total number of rides for every month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month and sort the results in month order\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#what-is-arrow-1",
+    "href": "slides.html#what-is-arrow-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "What is Arrow?",
+    "text": "What is Arrow?\n\nA multi-language toolbox  for accelerated data interchange  and in-memory processing"
+  },
+  {
+    "objectID": "slides.html#a-multi-language-toolbox",
+    "href": "slides.html#a-multi-language-toolbox",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "A multi-language toolbox",
+    "text": "A multi-language toolbox"
+  },
+  {
+    "objectID": "slides.html#accelerated-data-interchange",
+    "href": "slides.html#accelerated-data-interchange",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Accelerated data interchange",
+    "text": "Accelerated data interchange"
+  },
+  {
+    "objectID": "slides.html#accelerated-data-interchange-1",
+    "href": "slides.html#accelerated-data-interchange-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Accelerated data interchange",
+    "text": "Accelerated data interchange"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing",
+    "href": "slides.html#efficient-in-memory-processing",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing-1",
+    "href": "slides.html#efficient-in-memory-processing-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing-2",
+    "href": "slides.html#efficient-in-memory-processing-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#what-is-the-arrow-package-1",
+    "href": "slides.html#what-is-the-arrow-package-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "What is the arrow package?",
+    "text": "What is the arrow package?\n\nRead/write functionality\nData wrangling functionality"
+  },
+  {
+    "objectID": "slides.html#readwrite",
+    "href": "slides.html#readwrite",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Read/write",
+    "text": "Read/write"
+  },
+  {
+    "objectID": "slides.html#data-wrangling",
+    "href": "slides.html#data-wrangling",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Data wrangling",
+    "text": "Data wrangling"
+  },
+  {
+    "objectID": "slides.html#the-arrow-package-1",
+    "href": "slides.html#the-arrow-package-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "The {arrow} package",
+    "text": "The {arrow} package\n\nRead/write functionality\nData wrangling functionality"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-queries",
+    "href": "slides.html#one-table-dplyr-verbs-queries",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table dplyr verbs: queries",
+    "text": "One-table dplyr verbs: queries\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100)"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-collect",
+    "href": "slides.html#one-table-dplyr-verbs-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table dplyr verbs: collect()",
+    "text": "One-table dplyr verbs: collect()\n\ntic()\ncollect(shared_rides)\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\ntoc()\n\n1.977 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#limitations",
+    "href": "slides.html#limitations",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Limitations",
+    "text": "Limitations\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#mutating-multiple-columns-manually",
+    "href": "slides.html#mutating-multiple-columns-manually",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mutating multiple columns, manually",
+    "text": "Mutating multiple columns, manually\n\nmillions <- function(x) x / 10^6\n\nshared_rides |>\n  mutate(\n    all_trips = millions(all_trips),\n    shared_trips = millions(shared_trips)\n  ) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#arrow-does-not-understand-scoped-verbs",
+    "href": "slides.html#arrow-does-not-understand-scoped-verbs",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow does not understand scoped verbs",
+    "text": "Arrow does not understand scoped verbs\n\nshared_rides |>\n  mutate_at(c(\"all_trips\", \"shared_trips\"), millions) |>\n  collect()\n\nError in if (deparse(expr[[1]]) == name) {: the condition has length > 1"
+  },
+  {
+    "objectID": "slides.html#arrow-does-not-understand-across",
+    "href": "slides.html#arrow-does-not-understand-across",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow does not understand across()",
+    "text": "Arrow does not understand across()\n\nshared_rides |>\n  mutate(across(ends_with(\"trips\"), millions)) |>\n  collect()\n\nError: Expression across(ends_with(\"trips\"), millions) not supported in Arrow\nCall collect() first to pull data into R."
+  },
+  {
+    "objectID": "slides.html#delaying-across-until-after-collect",
+    "href": "slides.html#delaying-across-until-after-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Delaying across() until after collect()",
+    "text": "Delaying across() until after collect()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#do-across-after-collect",
+    "href": "slides.html#do-across-after-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Do across() after collect()",
+    "text": "Do across() after collect()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-zones-table",
+    "href": "slides.html#nyc-taxi-zones-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi zones table",
+    "text": "NYC taxi zones table\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow() |>\n  clean_names()\n\nnyc_taxi_zones\n\n# A tibble: 265 × 4\n   location_id borough       zone                    service_zone\n         <int> <chr>         <chr>                   <chr>       \n 1           1 EWR           Newark Airport          EWR         \n 2           2 Queens        Jamaica Bay             Boro Zone   \n 3           3 Bronx         Allerton/Pelham Gardens Boro Zone   \n 4           4 Manhattan     Alphabet City           Yellow Zone \n 5           5 Staten Island Arden Heights           Boro Zone   \n 6           6 Staten Island Arrochar/Fort Wadsworth Boro Zone   \n 7           7 Queens        Astoria                 Boro Zone   \n 8           8 Queens        Astoria Park            Boro Zone   \n 9           9 Queens        Auburndale              Boro Zone   \n10          10 Queens        Baisley Park            Boro Zone   \n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-zones-as-an-arrow-table",
+    "href": "slides.html#nyc-taxi-zones-as-an-arrow-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi zones as an Arrow Table",
+    "text": "NYC taxi zones as an Arrow Table\n\nnyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)\nnyc_taxi_zones_arrow\n\nTable\n265 rows x 4 columns\n$location_id <int32>\n$borough <string>\n$zone <string>\n$service_zone <string>"
+  },
+  {
+    "objectID": "slides.html#columns-of-an-arrow-table",
+    "href": "slides.html#columns-of-an-arrow-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Columns of an Arrow Table",
+    "text": "Columns of an Arrow Table\n\nnyc_taxi_zones_arrow$zone\n\nChunkedArray\n[\n  [\n    \"Newark Airport\",\n    \"Jamaica Bay\",\n    \"Allerton/Pelham Gardens\",\n    \"Alphabet City\",\n    \"Arden Heights\",\n    \"Arrochar/Fort Wadsworth\",\n    \"Astoria\",\n    \"Astoria Park\",\n    \"Auburndale\",\n    \"Baisley Park\",\n    ...\n    \"Williamsburg (South Side)\",\n    \"Windsor Terrace\",\n    \"Woodhaven\",\n    \"Woodlawn/Wakefield\",\n    \"Woodside\",\n    \"World Trade Center\",\n    \"Yorkville East\",\n    \"Yorkville West\",\n    \"NV\",\n    null\n  ]\n]\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#table-columns-are-chunked-arrays",
+    "href": "slides.html#table-columns-are-chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Table columns are (Chunked) Arrays",
+    "text": "Table columns are (Chunked) Arrays\n\nnyc_taxi_zones_arrow$zone\n\nChunkedArray\n[\n  [\n    \"Newark Airport\",\n    \"Jamaica Bay\",\n    \"Allerton/Pelham Gardens\",\n    \"Alphabet City\",\n    \"Arden Heights\",\n    \"Arrochar/Fort Wadsworth\",\n    \"Astoria\",\n    \"Astoria Park\",\n    \"Auburndale\",\n    \"Baisley Park\",\n    ...\n    \"Williamsburg (South Side)\",\n    \"Windsor Terrace\",\n    \"Woodhaven\",\n    \"Woodlawn/Wakefield\",\n    \"Woodside\",\n    \"World Trade Center\",\n    \"Yorkville East\",\n    \"Yorkville West\",\n    \"NV\",\n    null\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise",
+    "href": "slides.html#string-manipulation-exercise",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\nRemove vowels and all text after /\nCount length of abbreviated strings\nArrange by descending string length"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-1",
+    "href": "slides.html#string-manipulation-exercise-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-2",
+    "href": "slides.html#string-manipulation-exercise-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\ncollect(short_zones)\n\n# A tibble: 265 × 3\n   zone                         abbr_zone          abbr_zone_len\n   <chr>                        <chr>                      <int>\n 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18\n 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17\n 3 Springfield Gardens North    SprngfldGrdnsNrth             17\n 4 Springfield Gardens South    SprngfldGrdnsSth              16\n 5 Washington Heights North     WshngtnHghtsNrth              16\n 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16\n 7 Financial District North     FnnclDstrctNrth               15\n 8 Washington Heights South     WshngtnHghtsSth               15\n 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15\n10 Financial District South     FnnclDstrctSth                14\n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#tracking-the-data",
+    "href": "slides.html#tracking-the-data",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tracking the data",
+    "text": "Tracking the data"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time",
+    "href": "slides.html#pickup-at-pi-time",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time",
+    "text": "Pickup at pi time\n\npi_time_pickups <- nyc_taxi |>\n  filter(year == 2022, month == 1) |>\n  mutate(\n    day = day(pickup_datetime),\n    weekday = wday(pickup_datetime, label = TRUE),\n    hour = hour(pickup_datetime),\n    minute = minute(pickup_datetime),\n    second = second(pickup_datetime)\n  ) |> \n  filter(hour == 3, minute == 14, second == 15) |>\n  select(pickup_datetime, year, month, day, weekday)"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time-1",
+    "href": "slides.html#pickup-at-pi-time-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time",
+    "text": "Pickup at pi time\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\nThe output is correct: hour == 3 refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)"
+  },
+  {
+    "objectID": "slides.html#penguin-data",
+    "href": "slides.html#penguin-data",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Penguin data",
+    "text": "Penguin data\n\npenguins\n\n# A tibble: 344 × 8\n   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g\n   <fct>   <fct>              <dbl>         <dbl>             <int>       <int>\n 1 Adelie  Torgersen           39.1          18.7               181        3750\n 2 Adelie  Torgersen           39.5          17.4               186        3800\n 3 Adelie  Torgersen           40.3          18                 195        3250\n 4 Adelie  Torgersen           NA            NA                  NA          NA\n 5 Adelie  Torgersen           36.7          19.3               193        3450\n 6 Adelie  Torgersen           39.3          20.6               190        3650\n 7 Adelie  Torgersen           38.9          17.8               181        3625\n 8 Adelie  Torgersen           39.2          19.6               195        4675\n 9 Adelie  Torgersen           34.1          18.1               193        3475\n10 Adelie  Torgersen           42            20.2               190        4250\n# … with 334 more rows, and 2 more variables: sex <fct>, year <int>"
+  },
+  {
+    "objectID": "slides.html#penguin-data-an-auxiliary-table",
+    "href": "slides.html#penguin-data-an-auxiliary-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Penguin data: An auxiliary table",
+    "text": "Penguin data: An auxiliary table\n\nlocation <- arrow_table(\n  island = c(\"Torgersen\", \"Biscoe\", \"Dream\"), \n  lon = c(-64.77, -65.43, -64.73),\n  lat = c(-64.08, -65.50, -64.23)\n)  \nlocation\n\nTable\n3 rows x 3 columns\n$island <string>\n$lon <double>\n$lat <double>"
+  },
+  {
+    "objectID": "slides.html#left-joining-penguins-and-location",
+    "href": "slides.html#left-joining-penguins-and-location",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left joining penguins and location",
+    "text": "Left joining penguins and location"
+  },
+  {
+    "objectID": "slides.html#left-join-works-as-expected",
+    "href": "slides.html#left-join-works-as-expected",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left join works as expected",
+    "text": "Left join works as expected\n\npenguins |> \n  arrow_table() |>\n  left_join(location) |> \n  select(species, island, bill_length_mm, lon, lat) |>\n  collect()\n\n# A tibble: 344 × 5\n   species island    bill_length_mm   lon   lat\n   <fct>   <fct>              <dbl> <dbl> <dbl>\n 1 Adelie  Torgersen           39.1 -64.8 -64.1\n 2 Adelie  Torgersen           39.5 -64.8 -64.1\n 3 Adelie  Torgersen           40.3 -64.8 -64.1\n 4 Adelie  Torgersen           NA   -64.8 -64.1\n 5 Adelie  Torgersen           36.7 -64.8 -64.1\n 6 Adelie  Torgersen           39.3 -64.8 -64.1\n 7 Adelie  Torgersen           38.9 -64.8 -64.1\n 8 Adelie  Torgersen           39.2 -64.8 -64.1\n 9 Adelie  Torgersen           34.1 -64.8 -64.1\n10 Adelie  Torgersen           42   -64.8 -64.1\n# … with 334 more rows\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#left-joining-works-as-expected",
+    "href": "slides.html#left-joining-works-as-expected",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left joining works as expected",
+    "text": "Left joining works as expected\n\npenguins |> \n  arrow_table() |>\n  left_join(location) |> \n  select(species, island, bill_length_mm, lon, lat) |>\n  collect()\n\n# A tibble: 344 × 5\n   species island    bill_length_mm   lon   lat\n   <fct>   <fct>              <dbl> <dbl> <dbl>\n 1 Adelie  Torgersen           39.1 -64.8 -64.1\n 2 Adelie  Torgersen           39.5 -64.8 -64.1\n 3 Adelie  Torgersen           40.3 -64.8 -64.1\n 4 Adelie  Torgersen           NA   -64.8 -64.1\n 5 Adelie  Torgersen           36.7 -64.8 -64.1\n 6 Adelie  Torgersen           39.3 -64.8 -64.1\n 7 Adelie  Torgersen           38.9 -64.8 -64.1\n 8 Adelie  Torgersen           39.2 -64.8 -64.1\n 9 Adelie  Torgersen           34.1 -64.8 -64.1\n10 Adelie  Torgersen           42   -64.8 -64.1\n# … with 334 more rows"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary",
+    "href": "slides.html#traps-for-the-unwary",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary-1",
+    "href": "slides.html#traps-for-the-unwary-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\npickup\n\n# A tibble: 265 × 2\n   pickup_location_id pickup_borough\n                <int> <chr>         \n 1                  1 EWR           \n 2                  2 Queens        \n 3                  3 Bronx         \n 4                  4 Manhattan     \n 5                  5 Staten Island \n 6                  6 Staten Island \n 7                  7 Queens        \n 8                  8 Queens        \n 9                  9 Queens        \n10                 10 Queens        \n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary-2",
+    "href": "slides.html#traps-for-the-unwary-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…\n\nnyc_taxi |> \n  left_join(pickup) |>\n  collect()\n\nError in `collect()`:\n! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32"
+  },
+  {
+    "objectID": "slides.html#why-didnt-this-work",
+    "href": "slides.html#why-didnt-this-work",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Why didn’t this work?",
+    "text": "Why didn’t this work?\n\nnyc_taxi$schema\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "slides.html#why-didnt-this-work-1",
+    "href": "slides.html#why-didnt-this-work-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Why didn’t this work?",
+    "text": "Why didn’t this work?\n\narrow_table(pickup)$schema\n\nSchema\npickup_location_id: int32\npickup_borough: string"
+  },
+  {
+    "objectID": "slides.html#specifying-the-schema",
+    "href": "slides.html#specifying-the-schema",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Specifying the schema",
+    "text": "Specifying the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\nnyc_taxi_zones$schema\n\nSchema\nlocation_id: int64\nborough: string\nzone: string\nservice_zone: string\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#controlling-the-schema",
+    "href": "slides.html#controlling-the-schema",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Controlling the schema",
+    "text": "Controlling the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\nnyc_taxi_zones$schema\n\nSchema\nlocation_id: int64\nborough: string\nzone: string\nservice_zone: string"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query",
+    "href": "slides.html#fixing-the-query",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\ndropoff <- nyc_taxi_zones |> \n  select(\n    dropoff_location_id = location_id, \n    dropoff_borough = borough\n  )"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query-1",
+    "href": "slides.html#fixing-the-query-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\ntic()\nborough_counts <- nyc_taxi |> \n  left_join(pickup) |>\n  left_join(dropoff) |>\n  count(pickup_borough, dropoff_borough) |>\n  arrange(desc(n)) |>\n  collect()\ntoc()\n\n509.919 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query-2",
+    "href": "slides.html#fixing-the-query-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough          n\n   <chr>          <chr>                <int>\n 1 <NA>           <NA>            1249152360\n 2 Manhattan      Manhattan        355850092\n 3 Queens         Manhattan         14648891\n 4 Manhattan      Queens            13186443\n 5 Manhattan      Brooklyn          11294128\n 6 Queens         Queens             7537042\n 7 Unknown        Unknown            4519763\n 8 Queens         Brooklyn           3727686\n 9 Brooklyn       Brooklyn           3566671\n10 Manhattan      Bronx              2091627\n# … with 40 more rows"
+  },
+  {
+    "objectID": "slides.html#exercise",
+    "href": "slides.html#exercise",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Exercise",
+    "text": "Exercise\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)?"
+  },
+  {
+    "objectID": "slides.html#a-difficulty-in-arrow",
+    "href": "slides.html#a-difficulty-in-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "A difficulty in {arrow}",
+    "text": "A difficulty in {arrow}\n\npenguins |> \n  arrow_table() |> \n  mutate(id = row_number()) |> # a window function!\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)"
+  },
+  {
+    "objectID": "slides.html#an-easy-fix-with-duckdb",
+    "href": "slides.html#an-easy-fix-with-duckdb",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "An easy fix with {duckdb}",
+    "text": "An easy fix with {duckdb}\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows"
+  },
+  {
+    "objectID": "slides.html#numerology-example",
+    "href": "slides.html#numerology-example",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Numerology example",
+    "text": "Numerology example\n\ntic()\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.542 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#numerology-example-1",
+    "href": "slides.html#numerology-example-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Numerology example",
+    "text": "Numerology example\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows"
+  },
+  {
+    "objectID": "slides.html#readwrite-2",
+    "href": "slides.html#readwrite-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Read/write",
+    "text": "Read/write\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#big-data-file-formats-1",
+    "href": "slides.html#big-data-file-formats-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Big data file formats",
+    "text": "Big data file formats"
+  },
+  {
+    "objectID": "slides.html#parquet-files-are-row-chunked",
+    "href": "slides.html#parquet-files-are-row-chunked",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Parquet files are “row chunked”",
+    "text": "Parquet files are “row chunked”"
+  },
+  {
+    "objectID": "slides.html#parquet-files-are-row-chunked-column-arranged-and-paged",
+    "href": "slides.html#parquet-files-are-row-chunked-column-arranged-and-paged",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Parquet files are “row chunked, column-arranged, and paged”",
+    "text": "Parquet files are “row chunked, column-arranged, and paged”"
+  },
+  {
+    "objectID": "slides.html#parquet-files-organization",
+    "href": "slides.html#parquet-files-organization",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Parquet files organization",
+    "text": "Parquet files organization\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#parquet-file-organization",
+    "href": "slides.html#parquet-file-organization",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Parquet file organization",
+    "text": "Parquet file organization"
+  },
+  {
+    "objectID": "slides.html#reading-parquet-files",
+    "href": "slides.html#reading-parquet-files",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Reading parquet files",
+    "text": "Reading parquet files\n\nparquet_file <- \"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet\"\n\nnyc_taxi_2019_09 <- read_parquet(parquet_file)\nnyc_taxi_2019_09\n\n# A tibble: 6,567,396 × 22\n   vendor_name pickup_datetime     dropoff_datetime    passenger_count\n   <chr>       <dttm>              <dttm>                        <int>\n 1 VTS         2019-09-01 15:14:09 2019-09-01 15:31:52               2\n 2 VTS         2019-09-01 15:36:17 2019-09-01 16:12:44               1\n 3 VTS         2019-09-01 15:29:19 2019-09-01 15:54:13               1\n 4 CMT         2019-09-01 15:33:09 2019-09-01 15:52:14               2\n 5 VTS         2019-09-01 15:57:43 2019-09-01 16:26:21               1\n 6 CMT         2019-09-01 15:59:16 2019-09-01 16:28:12               1\n 7 CMT         2019-09-01 15:20:06 2019-09-01 15:52:19               1\n 8 CMT         2019-09-01 15:27:54 2019-09-01 15:32:56               0\n 9 CMT         2019-09-01 15:35:08 2019-09-01 15:55:51               0\n10 CMT         2019-09-01 15:19:37 2019-09-01 15:30:52               1\n# … with 6,567,386 more rows, and 18 more variables: trip_distance <dbl>,\n#   pickup_longitude <dbl>, pickup_latitude <dbl>, rate_code <chr>,\n#   store_and_fwd <chr>, dropoff_longitude <dbl>, dropoff_latitude <dbl>,\n#   payment_type <chr>, fare_amount <dbl>, extra <dbl>, mta_tax <dbl>,\n#   tip_amount <dbl>, tolls_amount <dbl>, total_amount <dbl>,\n#   improvement_surcharge <dbl>, congestion_surcharge <dbl>,\n#   pickup_location_id <int>, dropoff_location_id <int>"
+  },
+  {
+    "objectID": "slides.html#reading-parquet-files-1",
+    "href": "slides.html#reading-parquet-files-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Reading parquet files",
+    "text": "Reading parquet files\n\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\"))\n\n# A tibble: 6,567,396 × 4\n   pickup_datetime     pickup_longitude pickup_latitude pickup_location_id\n   <dttm>                         <dbl>           <dbl>              <int>\n 1 2019-09-01 15:14:09               NA              NA                186\n 2 2019-09-01 15:36:17               NA              NA                138\n 3 2019-09-01 15:29:19               NA              NA                132\n 4 2019-09-01 15:33:09               NA              NA                 79\n 5 2019-09-01 15:57:43               NA              NA                132\n 6 2019-09-01 15:59:16               NA              NA                132\n 7 2019-09-01 15:20:06               NA              NA                132\n 8 2019-09-01 15:27:54               NA              NA                224\n 9 2019-09-01 15:35:08               NA              NA                 79\n10 2019-09-01 15:19:37               NA              NA                 97\n# … with 6,567,386 more rows"
+  },
+  {
+    "objectID": "slides.html#selective-reads-are-faster",
+    "href": "slides.html#selective-reads-are-faster",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Selective reads are faster",
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.473 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.104 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-files",
+    "href": "slides.html#nyc-taxi-data-files",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data files",
+    "text": "NYC taxi data files\n\nnyc_taxi$files\n\n  [1] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet\" \n  [2] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet\"\n  [3] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=11/part-0.parquet\"\n  [4] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=12/part-0.parquet\"\n  [5] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=2/part-0.parquet\" \n  [6] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=3/part-0.parquet\" \n  [7] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=4/part-0.parquet\" \n  [8] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=5/part-0.parquet\" \n  [9] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=6/part-0.parquet\" \n [10] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=7/part-0.parquet\" \n [11] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=8/part-0.parquet\" \n [12] \"/home/danielle/Datasets/nyc-taxi/year=2009/month=9/part-0.parquet\" \n [13] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=1/part-0.parquet\" \n [14] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=10/part-0.parquet\"\n [15] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=11/part-0.parquet\"\n [16] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=12/part-0.parquet\"\n [17] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=2/part-0.parquet\" \n [18] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=3/part-0.parquet\" \n [19] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=4/part-0.parquet\" \n [20] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=5/part-0.parquet\" \n [21] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=6/part-0.parquet\" \n [22] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=7/part-0.parquet\" \n [23] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=8/part-0.parquet\" \n [24] \"/home/danielle/Datasets/nyc-taxi/year=2010/month=9/part-0.parquet\" \n [25] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=1/part-0.parquet\" \n [26] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=10/part-0.parquet\"\n [27] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=11/part-0.parquet\"\n [28] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=12/part-0.parquet\"\n [29] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=2/part-0.parquet\" \n [30] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=3/part-0.parquet\" \n [31] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=4/part-0.parquet\" \n [32] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=5/part-0.parquet\" \n [33] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=6/part-0.parquet\" \n [34] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=7/part-0.parquet\" \n [35] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=8/part-0.parquet\" \n [36] \"/home/danielle/Datasets/nyc-taxi/year=2011/month=9/part-0.parquet\" \n [37] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=1/part-0.parquet\" \n [38] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=10/part-0.parquet\"\n [39] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=11/part-0.parquet\"\n [40] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=12/part-0.parquet\"\n [41] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=2/part-0.parquet\" \n [42] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=3/part-0.parquet\" \n [43] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=4/part-0.parquet\" \n [44] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=5/part-0.parquet\" \n [45] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=6/part-0.parquet\" \n [46] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=7/part-0.parquet\" \n [47] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=8/part-0.parquet\" \n [48] \"/home/danielle/Datasets/nyc-taxi/year=2012/month=9/part-0.parquet\" \n [49] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=1/part-0.parquet\" \n [50] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=10/part-0.parquet\"\n [51] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=11/part-0.parquet\"\n [52] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=12/part-0.parquet\"\n [53] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=2/part-0.parquet\" \n [54] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=3/part-0.parquet\" \n [55] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=4/part-0.parquet\" \n [56] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=5/part-0.parquet\" \n [57] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=6/part-0.parquet\" \n [58] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=7/part-0.parquet\" \n [59] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=8/part-0.parquet\" \n [60] \"/home/danielle/Datasets/nyc-taxi/year=2013/month=9/part-0.parquet\" \n [61] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=1/part-0.parquet\" \n [62] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=10/part-0.parquet\"\n [63] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=11/part-0.parquet\"\n [64] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=12/part-0.parquet\"\n [65] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=2/part-0.parquet\" \n [66] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=3/part-0.parquet\" \n [67] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=4/part-0.parquet\" \n [68] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=5/part-0.parquet\" \n [69] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=6/part-0.parquet\" \n [70] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=7/part-0.parquet\" \n [71] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=8/part-0.parquet\" \n [72] \"/home/danielle/Datasets/nyc-taxi/year=2014/month=9/part-0.parquet\" \n [73] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=1/part-0.parquet\" \n [74] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=10/part-0.parquet\"\n [75] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=11/part-0.parquet\"\n [76] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=12/part-0.parquet\"\n [77] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=2/part-0.parquet\" \n [78] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=3/part-0.parquet\" \n [79] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=4/part-0.parquet\" \n [80] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=5/part-0.parquet\" \n [81] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=6/part-0.parquet\" \n [82] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=7/part-0.parquet\" \n [83] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=8/part-0.parquet\" \n [84] \"/home/danielle/Datasets/nyc-taxi/year=2015/month=9/part-0.parquet\" \n [85] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=1/part-0.parquet\" \n [86] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=10/part-0.parquet\"\n [87] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=11/part-0.parquet\"\n [88] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=12/part-0.parquet\"\n [89] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=2/part-0.parquet\" \n [90] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=3/part-0.parquet\" \n [91] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=4/part-0.parquet\" \n [92] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=5/part-0.parquet\" \n [93] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=6/part-0.parquet\" \n [94] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=7/part-0.parquet\" \n [95] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=8/part-0.parquet\" \n [96] \"/home/danielle/Datasets/nyc-taxi/year=2016/month=9/part-0.parquet\" \n [97] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=1/part-0.parquet\" \n [98] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=10/part-0.parquet\"\n [99] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=11/part-0.parquet\"\n[100] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=12/part-0.parquet\"\n[101] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=2/part-0.parquet\" \n[102] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=3/part-0.parquet\" \n[103] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=4/part-0.parquet\" \n[104] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=5/part-0.parquet\" \n[105] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=6/part-0.parquet\" \n[106] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=7/part-0.parquet\" \n[107] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=8/part-0.parquet\" \n[108] \"/home/danielle/Datasets/nyc-taxi/year=2017/month=9/part-0.parquet\" \n[109] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=1/part-0.parquet\" \n[110] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=10/part-0.parquet\"\n[111] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=11/part-0.parquet\"\n[112] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=12/part-0.parquet\"\n[113] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=2/part-0.parquet\" \n[114] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=3/part-0.parquet\" \n[115] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=4/part-0.parquet\" \n[116] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=5/part-0.parquet\" \n[117] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=6/part-0.parquet\" \n[118] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=7/part-0.parquet\" \n[119] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=8/part-0.parquet\" \n[120] \"/home/danielle/Datasets/nyc-taxi/year=2018/month=9/part-0.parquet\" \n[121] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=1/part-0.parquet\" \n[122] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=10/part-0.parquet\"\n[123] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=11/part-0.parquet\"\n[124] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=12/part-0.parquet\"\n[125] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=2/part-0.parquet\" \n[126] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=3/part-0.parquet\" \n[127] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=4/part-0.parquet\" \n[128] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=5/part-0.parquet\" \n[129] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=6/part-0.parquet\" \n[130] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=7/part-0.parquet\" \n[131] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=8/part-0.parquet\" \n[132] \"/home/danielle/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet\" \n[133] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=1/part-0.parquet\" \n[134] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=10/part-0.parquet\"\n[135] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=11/part-0.parquet\"\n[136] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=12/part-0.parquet\"\n[137] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=2/part-0.parquet\" \n[138] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=3/part-0.parquet\" \n[139] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=4/part-0.parquet\" \n[140] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=5/part-0.parquet\" \n[141] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=6/part-0.parquet\" \n[142] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=7/part-0.parquet\" \n[143] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=8/part-0.parquet\" \n[144] \"/home/danielle/Datasets/nyc-taxi/year=2020/month=9/part-0.parquet\" \n[145] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=1/part-0.parquet\" \n[146] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=10/part-0.parquet\"\n[147] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=11/part-0.parquet\"\n[148] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=12/part-0.parquet\"\n[149] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=2/part-0.parquet\" \n[150] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=3/part-0.parquet\" \n[151] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=4/part-0.parquet\" \n[152] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=5/part-0.parquet\" \n[153] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=6/part-0.parquet\" \n[154] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=7/part-0.parquet\" \n[155] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=8/part-0.parquet\" \n[156] \"/home/danielle/Datasets/nyc-taxi/year=2021/month=9/part-0.parquet\" \n[157] \"/home/danielle/Datasets/nyc-taxi/year=2022/month=1/part-0.parquet\" \n[158] \"/home/danielle/Datasets/nyc-taxi/year=2022/month=2/part-0.parquet\""
+  },
+  {
+    "objectID": "slides.html#partition-structure-matters",
+    "href": "slides.html#partition-structure-matters",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Partition structure matters",
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.515 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#writing-datasets",
+    "href": "slides.html#writing-datasets",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Writing datasets",
+    "text": "Writing datasets\n\ntic()\nnyc_taxi |> \n  filter(year == 2017) |>\n  group_by(month, vendor_name) |>\n  write_dataset(\"~/Datasets/nyc-taxi_2017\")\ntoc()\n\n17.617 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#data-frames-in-r",
+    "href": "slides.html#data-frames-in-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Data frames in R",
+    "text": "Data frames in R"
+  },
+  {
+    "objectID": "slides.html#arrow-record-batches",
+    "href": "slides.html#arrow-record-batches",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow record batches",
+    "text": "Arrow record batches"
+  },
+  {
+    "objectID": "slides.html#arrow-tables",
+    "href": "slides.html#arrow-tables",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow tables",
+    "text": "Arrow tables"
+  },
+  {
+    "objectID": "slides.html#arrow-scalars",
+    "href": "slides.html#arrow-scalars",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow scalars",
+    "text": "Arrow scalars\n\nScalar$create(\"New York\")\n\nScalar\nNew York"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays",
+    "href": "slides.html#arrow-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays\n\ncity <- Array$create(c(\"New York\", NA, NA, \"Philadelphia\"))\ncity\n\nArray\n<string>\n[\n  \"New York\",\n  null,\n  null,\n  \"Philadelphia\"\n]"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays-1",
+    "href": "slides.html#arrow-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays\n\ncity[1:2]\n\nArray\n<string>\n[\n  \"New York\",\n  null\n]"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays-2",
+    "href": "slides.html#arrow-arrays-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays",
+    "href": "slides.html#chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-1",
+    "href": "slides.html#chunked-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity <- ChunkedArray$create(\n  c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n  c(\"Sydney\", \"Barcelona\")\n)\ncity\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-2",
+    "href": "slides.html#chunked-arrays-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity <- chunked_array(\n  c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n  c(\"Sydney\", \"Barcelona\")\n)\ncity\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-3",
+    "href": "slides.html#chunked-arrays-3",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity[4:6]\n\nChunkedArray\n[\n  [\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#tables-are-collections-of-chunked-arrays",
+    "href": "slides.html#tables-are-collections-of-chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tables are collections of chunked arrays",
+    "text": "Tables are collections of chunked arrays\n\nriots <- arrow_table(\n  location = chunked_array(\n    c(\"Stonewall Inn\", \"Compton's Cafeteria\", \"Cooper Do-nuts\", \"Dewey's\"), \n    c(\"King's Cross\", \"La Rambla\")\n  ), \n  year = chunked_array(\n    c(1969, 1966, 1959, 1965),\n    c(1978, 1977)\n  ),\n  city = chunked_array(\n    c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n    c(\"Sydney\", \"Barcelona\")\n  )\n)\nriots\n\nTable\n6 rows x 3 columns\n$location <string>\n$year <double>\n$city <string>"
+  },
+  {
+    "objectID": "slides.html#tables-are-collections-of-chunked-arrays-1",
+    "href": "slides.html#tables-are-collections-of-chunked-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tables are collections of chunked arrays",
+    "text": "Tables are collections of chunked arrays\n\nriots$city\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#pulling-into-r",
+    "href": "slides.html#pulling-into-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pulling into R",
+    "text": "Pulling into R\n\nas.data.frame(riots)\n\n# A tibble: 6 × 3\n  location             year city         \n  <chr>               <dbl> <chr>        \n1 Stonewall Inn        1969 New York     \n2 Compton's Cafeteria  1966 San Francisco\n3 Cooper Do-nuts       1959 Los Angeles  \n4 Dewey's              1965 Philadelphia \n5 King's Cross         1978 Sydney       \n6 La Rambla            1977 Barcelona"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-1",
+    "href": "slides.html#mapping-scalar-types-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-2",
+    "href": "slides.html#mapping-scalar-types-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-3",
+    "href": "slides.html#mapping-scalar-types-3",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#some-code-really-needs-arrow",
+    "href": "slides.html#some-code-really-needs-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Some code really needs {arrow}",
+    "text": "Some code really needs {arrow}\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow(\n    as_data_frame = FALSE, \n    skip = 1, \n    schema = schema(\n      LocationID = int64(),\n      Borough = utf8(),\n      Zone = utf8(),\n      service_zone = utf8()\n    )\n  ) |>\n  rename(\n    location_id = LocationID,\n    borough = Borough,\n    zone = Zone,\n    service_zone = service_zone\n  )\n  \nairport_zones <- nyc_taxi_zones |>\n  filter(str_detect(zone, \"Airport\")) |>\n  pull(location_id)\n\ndropoff_zones <- nyc_taxi_zones |>\n  select(\n    dropoff_location_id = location_id,\n    dropoff_zone = zone\n  ) \n\nairport_pickups <- nyc_taxi |>\n  filter(pickup_location_id %in% airport_zones) |>\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |>\n  left_join(dropoff_zones) |>\n  count(dropoff_zone) |>\n  arrange(desc(n)) |>\n  collect()\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#some-things-really-need-arrow",
+    "href": "slides.html#some-things-really-need-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Some things really need Arrow",
+    "text": "Some things really need Arrow\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow(\n    as_data_frame = FALSE, \n    skip = 1, \n    schema = schema(\n      LocationID = int64(),\n      Borough = utf8(),\n      Zone = utf8(),\n      service_zone = utf8()\n    )\n  ) |>\n  rename(\n    location_id = LocationID,\n    borough = Borough,\n    zone = Zone,\n    service_zone = service_zone\n  )\n  \nairport_zones <- nyc_taxi_zones |>\n  filter(str_detect(zone, \"Airport\")) |>\n  pull(location_id)\n\ndropoff_zones <- nyc_taxi_zones |>\n  select(\n    dropoff_location_id = location_id,\n    dropoff_zone = zone\n  ) \n\nairport_pickups <- nyc_taxi |>\n  filter(pickup_location_id %in% airport_zones) |>\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |>\n  left_join(dropoff_zones) |>\n  count(dropoff_zone) |>\n  arrange(desc(n)) |>\n  collect()"
+  },
+  {
+    "objectID": "slides.html#other-things-really-need-r",
+    "href": "slides.html#other-things-really-need-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Other things really need R",
+    "text": "Other things really need R\n\ndat <- \"data/taxi_zones/taxi_zones.shp\" |>\n  read_sf() |>\n  clean_names() |>\n  left_join(airport_pickups,\n            by = c(\"zone\" = \"dropoff_zone\")) |>\n  arrange(desc(n))\n\nthe_big_picture <- dat |>\n  ggplot(aes(fill = n)) +\n  geom_sf(size = .1, color = \"#222222\") +\n  scale_fill_distiller(\n    name = \"Number of trips\",\n    labels = label_comma(),\n    palette = \"Oranges\",\n    direction = 1\n  ) +\n  geom_label_repel(\n    stat = \"sf_coordinates\",\n    data = dat |>\n      mutate(zone = case_when(\n        str_detect(zone, \"Airport\") ~ zone,\n        str_detect(zone, \"Times\") ~ zone,\n        TRUE ~ \"\")\n      ),\n    mapping = aes(label = zone, geometry = geometry),\n    max.overlaps = 50,\n    box.padding = .5,\n    label.padding = .5,\n    label.size = .15,\n    label.r = 0,\n    force = 30,\n    force_pull = 0,\n    fill = \"white\",\n    min.segment.length = 0\n  ) +\n  theme_void() +\n  theme(\n    text = element_text(colour = \"black\"), \n    plot.background = element_rect(colour = NA, fill = \"#839496\"),\n    legend.background = element_rect(fill = \"white\"),\n    legend.margin = margin(10, 10, 10, 10)\n  )"
+  },
+  {
+    "objectID": "slides.html#arrow-brings-them-together",
+    "href": "slides.html#arrow-brings-them-together",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "{arrow} brings them together",
+    "text": "{arrow} brings them together\n\nthe_big_picture\n\n\n\n\narrow-user2022.netlify.app"
   }
 ]

@@ -168,6 +168,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="./slides.html">Slides</a>
+  </li>  
 </ul>
               <div id="quarto-search" class="" title="Search"></div>
           </div> <!-- /navcollapse -->
@@ -311,7 +314,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.639 sec elapsed</code></pre>
+<pre><code>0.867 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
@@ -319,7 +322,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.104 sec elapsed</code></pre>
+<pre><code>0.165 sec elapsed</code></pre>
 </div>
 </div>
 <p>This property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.</p>
@@ -475,7 +478,7 @@ passenger_count: int64
 <span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.013 sec elapsed</code></pre>
+<pre><code>0.026 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
@@ -484,7 +487,7 @@ passenger_count: int64
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2.914 sec elapsed</code></pre>
+<pre><code>4.203 sec elapsed</code></pre>
 </div>
 </div>
 <p>Admittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.</p>
@@ -583,26 +586,26 @@ trip_distance: double
  2    11 13826243.
  3    12 13642500.
  4    10 41799496.
- 5     2 40006137.
- 6     3 55384892.
- 7     4 27440575.
+ 5     4 27440575.
+ 6     2 40006137.
+ 7     3 55384892.
  8     5 52798627.
  9     6 15617981.
-10     7 19210103.
+10     9 76139235.
 11     8 22581320.
-12     9 76139235.</code></pre>
+12     7 19210103.</code></pre>
 </div>
 </div>
 <p>Here’s the time taken for this query:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>0.526 sec elapsed</code></pre>
+<pre><code>0.803 sec elapsed</code></pre>
 </div>
 </div>
 <p>and for the same query performed on the <code>nyc_taxi_2016a</code> data:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>1.708 sec elapsed</code></pre>
+<pre><code>2.811 sec elapsed</code></pre>
 </div>
 </div>
 <p>The difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!</p>
@@ -646,12 +649,12 @@ Exercises
 <pre><code># A tibble: 6 × 3
   pickup_datetime     monthday yearday
   &lt;dttm&gt;                 &lt;int&gt;   &lt;int&gt;
-1 2019-10-02 06:41:22        1     274
-2 2019-10-02 06:53:46        1     274
-3 2019-10-02 06:05:22        1     274
-4 2019-10-02 06:19:59        1     274
-5 2019-10-02 06:45:45        1     274
-6 2019-10-02 06:03:44        1     274</code></pre>
+1 2019-12-01 12:39:20        1     335
+2 2019-12-01 12:07:55        1     335
+3 2019-12-01 12:22:44        1     335
+4 2019-12-01 12:38:48        1     335
+5 2019-12-01 12:13:21        1     335
+6 2019-12-01 12:39:52        1     335</code></pre>
 </div>
 </div>
 </div>
