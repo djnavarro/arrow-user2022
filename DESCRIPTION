@@ -21,6 +21,7 @@ Imports:
     dplyr (>= 1.0.0),
     duckdb,
     fs,
+    here,
     janitor,
     lubridate,
     palmerpenguins,

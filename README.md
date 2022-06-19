@@ -16,7 +16,25 @@ The repository is not an R package, but it does have a DESCRIPTION file. To inst
 remotes::install_deps()
 ```
 
-All the workshop materials are contained within the `_site` folder, and are online at the workshop website:
+The repository contains almost everything you need for the workshop. However, it does not include a copy of the data sets due to file size issues. 
 
-https://arrow-user2022.netlify.app/
+For the full NYC taxi data, see the instructions on the website. For the "tiny taxi" data, you can download directly from GitHub:
+
+``` r
+download.file(
+  url = "https://github.com/djnavarro/arrow-user2022/releases/download/v0.1/nyc-taxi-tiny.zip",
+  destfile = here::here("data/nyc-taxi-tiny.zip")
+)
+```
+
+To extract the parquet files from the archive:
+
+``` r
+unzip(
+  zipfile = here::here("data/nyc-taxi-tiny.zip"), 
+  exdir = here::here("data")
+)
+```
+
+The workshop website files are contained within the `_site` folder, and are online at https://arrow-user2022.netlify.app/
 
