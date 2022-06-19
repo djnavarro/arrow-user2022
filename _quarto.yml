@@ -3,6 +3,13 @@ project:
 
 website:
   title: "Apache Arrow in R"
+  site-url: https://arrow-user2022.netlify.app
+  repo-url: https://github.com/djnavarro/arrow-user2022
+  open-graph: true
+  twitter-card:
+    creator: "@djnavarro"
+    card-style: summary_large_image
+    image: "https://arrow-user2022.netlify.app/img/social-media-image.png"
   navbar:
     background: primary
     left:

@@ -118,6 +118,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 <link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Apache Arrow in R - Part 3: Data Storage">
+<meta property="og:site-name" content="Apache Arrow in R">
+<meta name="twitter:title" content="Apache Arrow in R - Part 3: Data Storage">
+<meta name="twitter:image" content="https://arrow-user2022.netlify.app/img/social-media-image.png">
+<meta name="twitter:creator" content="@djnavarro">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body class="nav-fixed">
@@ -305,7 +311,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.568 sec elapsed</code></pre>
+<pre><code>0.559 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
@@ -313,7 +319,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.147 sec elapsed</code></pre>
+<pre><code>0.119 sec elapsed</code></pre>
 </div>
 </div>
 <p>This property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.</p>
@@ -469,7 +475,7 @@ passenger_count: int64
 <span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.018 sec elapsed</code></pre>
+<pre><code>0.013 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
@@ -478,7 +484,7 @@ passenger_count: int64
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>3.298 sec elapsed</code></pre>
+<pre><code>2.675 sec elapsed</code></pre>
 </div>
 </div>
 <p>Admittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.</p>
@@ -573,30 +579,30 @@ trip_distance: double
 <pre><code># A tibble: 12 × 2
    month  distance
    &lt;int&gt;     &lt;dbl&gt;
- 1     1 33436823.
+ 1    12 13642500.
  2    10 41799496.
- 3    12 13642500.
+ 3     1 33436823.
  4    11 13826243.
  5     2 40006137.
  6     3 55384892.
- 7     4 27440575.
- 8     5 52798627.
+ 7     5 52798627.
+ 8     4 27440575.
  9     6 15617981.
-10     7 19210103.
-11     8 22581320.
-12     9 76139235 </code></pre>
+10     8 22581320.
+11     7 19210103.
+12     9 76139235.</code></pre>
 </div>
 </div>
 <p>Here’s the time taken for this query:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>0.514 sec elapsed</code></pre>
+<pre><code>0.474 sec elapsed</code></pre>
 </div>
 </div>
 <p>and for the same query performed on the <code>nyc_taxi_2016a</code> data:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>1.854 sec elapsed</code></pre>
+<pre><code>1.632 sec elapsed</code></pre>
 </div>
 </div>
 <p>The difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!</p>
@@ -640,12 +646,12 @@ Exercises
 <pre><code># A tibble: 6 × 3
   pickup_datetime     monthday yearday
   &lt;dttm&gt;                 &lt;int&gt;   &lt;int&gt;
-1 2019-10-02 06:41:22        1     274
-2 2019-10-02 06:53:46        1     274
-3 2019-10-02 06:05:22        1     274
-4 2019-10-02 06:19:59        1     274
-5 2019-10-02 06:45:45        1     274
-6 2019-10-02 06:03:44        1     274</code></pre>
+1 2019-10-01 21:41:59        1     274
+2 2019-10-01 21:54:58        1     274
+3 2019-10-01 21:17:05        1     274
+4 2019-10-01 21:37:10        1     274
+5 2019-10-01 21:34:11        1     274
+6 2019-10-01 21:39:46        1     274</code></pre>
 </div>
 </div>
 </div>
