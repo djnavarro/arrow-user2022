@@ -1216,6 +1216,314 @@ service_zone: string</code></pre>
 # … with 27 more rows</code></pre>
 </div>
 </div>
+</section></section>
+<section>
+<section id="big-data-file-formats" class="title-slide slide level1 center">
+<h1>Big data file formats</h1>
+<p>Section 9: In which we talk about parquet files</p>
+</section>
+<section id="big-data-file-formats-1" class="slide level2">
+<h2>Big data file formats</h2>
+
+<img data-src="img/arrow-read-write-dataset.png" class="r-stretch"></section>
+<section id="parquet-files-are-row-chunked" class="slide level2">
+<h2>Parquet files are “row chunked”</h2>
+
+<img data-src="img/parquet-chunking.png" class="r-stretch"></section>
+<section id="parquet-files-are-row-chunked-column-arranged-and-paged" class="slide level2">
+<h2>Parquet files are “row chunked, column-arranged, and paged”</h2>
+
+<img data-src="img/parquet-paging.png" class="r-stretch"></section>
+<section id="parquet-file-organization" class="slide level2">
+<h2>Parquet file organization</h2>
+
+<img data-src="img/parquet-organisation.png" class="r-stretch"></section>
+<section id="reading-parquet-files" class="slide level2">
+<h2>Reading parquet files</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1"></a>parquet_file <span class="ot">&lt;-</span> <span class="st">"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"</span></span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>nyc_taxi_2019_09 <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(parquet_file)</span>
+<span id="cb63-4"><a href="#cb63-4"></a>nyc_taxi_2019_09</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,567,396 × 22
+   vendor_name pickup_datetime     dropoff_datetime    passenger_count
+   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;
+ 1 VTS         2019-09-01 15:14:09 2019-09-01 15:31:52               2
+ 2 VTS         2019-09-01 15:36:17 2019-09-01 16:12:44               1
+ 3 VTS         2019-09-01 15:29:19 2019-09-01 15:54:13               1
+ 4 CMT         2019-09-01 15:33:09 2019-09-01 15:52:14               2
+ 5 VTS         2019-09-01 15:57:43 2019-09-01 16:26:21               1
+ 6 CMT         2019-09-01 15:59:16 2019-09-01 16:28:12               1
+ 7 CMT         2019-09-01 15:20:06 2019-09-01 15:52:19               1
+ 8 CMT         2019-09-01 15:27:54 2019-09-01 15:32:56               0
+ 9 CMT         2019-09-01 15:35:08 2019-09-01 15:55:51               0
+10 CMT         2019-09-01 15:19:37 2019-09-01 15:30:52               1
+# … with 6,567,386 more rows, and 18 more variables: trip_distance &lt;dbl&gt;,
+#   pickup_longitude &lt;dbl&gt;, pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;,
+#   store_and_fwd &lt;chr&gt;, dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;,
+#   payment_type &lt;chr&gt;, fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;,
+#   tip_amount &lt;dbl&gt;, tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;,
+#   improvement_surcharge &lt;dbl&gt;, congestion_surcharge &lt;dbl&gt;,
+#   pickup_location_id &lt;int&gt;, dropoff_location_id &lt;int&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="reading-parquet-files-1" class="slide level2">
+<h2>Reading parquet files</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb65-2"><a href="#cb65-2"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,567,396 × 4
+   pickup_datetime     pickup_longitude pickup_latitude pickup_location_id
+   &lt;dttm&gt;                         &lt;dbl&gt;           &lt;dbl&gt;              &lt;int&gt;
+ 1 2019-09-01 15:14:09               NA              NA                186
+ 2 2019-09-01 15:36:17               NA              NA                138
+ 3 2019-09-01 15:29:19               NA              NA                132
+ 4 2019-09-01 15:33:09               NA              NA                 79
+ 5 2019-09-01 15:57:43               NA              NA                132
+ 6 2019-09-01 15:59:16               NA              NA                132
+ 7 2019-09-01 15:20:06               NA              NA                132
+ 8 2019-09-01 15:27:54               NA              NA                224
+ 9 2019-09-01 15:35:08               NA              NA                 79
+10 2019-09-01 15:19:37               NA              NA                 97
+# … with 6,567,386 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="selective-reads-are-faster" class="slide level2">
+<h2>Selective reads are faster</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1"></a><span class="fu">tic</span>()</span>
+<span id="cb67-2"><a href="#cb67-2"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb67-3"><a href="#cb67-3"></a>  <span class="fu">read_parquet</span>() <span class="sc">|&gt;</span></span>
+<span id="cb67-4"><a href="#cb67-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
+<span id="cb67-5"><a href="#cb67-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.47 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1"></a><span class="fu">tic</span>()</span>
+<span id="cb69-2"><a href="#cb69-2"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb69-3"><a href="#cb69-3"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb69-4"><a href="#cb69-4"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb69-5"><a href="#cb69-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.109 sec elapsed</code></pre>
+</div>
+</div>
+</section></section>
+<section>
+<section id="multi-file-datasets" class="title-slide slide level1 center">
+<h1>Multi-file datasets</h1>
+<p>Section 10: In which we talk about partitioning</p>
+</section>
+<section id="nyc-taxi-data-files" class="slide level2">
+<h2>NYC taxi data files</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1"></a>nyc_taxi<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [1] "/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet" 
+  [2] "/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet"
+  [3] "/home/danielle/Datasets/nyc-taxi/year=2009/month=11/part-0.parquet"
+  [4] "/home/danielle/Datasets/nyc-taxi/year=2009/month=12/part-0.parquet"
+  [5] "/home/danielle/Datasets/nyc-taxi/year=2009/month=2/part-0.parquet" 
+  [6] "/home/danielle/Datasets/nyc-taxi/year=2009/month=3/part-0.parquet" 
+  [7] "/home/danielle/Datasets/nyc-taxi/year=2009/month=4/part-0.parquet" 
+  [8] "/home/danielle/Datasets/nyc-taxi/year=2009/month=5/part-0.parquet" 
+  [9] "/home/danielle/Datasets/nyc-taxi/year=2009/month=6/part-0.parquet" 
+ [10] "/home/danielle/Datasets/nyc-taxi/year=2009/month=7/part-0.parquet" 
+ [11] "/home/danielle/Datasets/nyc-taxi/year=2009/month=8/part-0.parquet" 
+ [12] "/home/danielle/Datasets/nyc-taxi/year=2009/month=9/part-0.parquet" 
+ [13] "/home/danielle/Datasets/nyc-taxi/year=2010/month=1/part-0.parquet" 
+ [14] "/home/danielle/Datasets/nyc-taxi/year=2010/month=10/part-0.parquet"
+ [15] "/home/danielle/Datasets/nyc-taxi/year=2010/month=11/part-0.parquet"
+ [16] "/home/danielle/Datasets/nyc-taxi/year=2010/month=12/part-0.parquet"
+ [17] "/home/danielle/Datasets/nyc-taxi/year=2010/month=2/part-0.parquet" 
+ [18] "/home/danielle/Datasets/nyc-taxi/year=2010/month=3/part-0.parquet" 
+ [19] "/home/danielle/Datasets/nyc-taxi/year=2010/month=4/part-0.parquet" 
+ [20] "/home/danielle/Datasets/nyc-taxi/year=2010/month=5/part-0.parquet" 
+ [21] "/home/danielle/Datasets/nyc-taxi/year=2010/month=6/part-0.parquet" 
+ [22] "/home/danielle/Datasets/nyc-taxi/year=2010/month=7/part-0.parquet" 
+ [23] "/home/danielle/Datasets/nyc-taxi/year=2010/month=8/part-0.parquet" 
+ [24] "/home/danielle/Datasets/nyc-taxi/year=2010/month=9/part-0.parquet" 
+ [25] "/home/danielle/Datasets/nyc-taxi/year=2011/month=1/part-0.parquet" 
+ [26] "/home/danielle/Datasets/nyc-taxi/year=2011/month=10/part-0.parquet"
+ [27] "/home/danielle/Datasets/nyc-taxi/year=2011/month=11/part-0.parquet"
+ [28] "/home/danielle/Datasets/nyc-taxi/year=2011/month=12/part-0.parquet"
+ [29] "/home/danielle/Datasets/nyc-taxi/year=2011/month=2/part-0.parquet" 
+ [30] "/home/danielle/Datasets/nyc-taxi/year=2011/month=3/part-0.parquet" 
+ [31] "/home/danielle/Datasets/nyc-taxi/year=2011/month=4/part-0.parquet" 
+ [32] "/home/danielle/Datasets/nyc-taxi/year=2011/month=5/part-0.parquet" 
+ [33] "/home/danielle/Datasets/nyc-taxi/year=2011/month=6/part-0.parquet" 
+ [34] "/home/danielle/Datasets/nyc-taxi/year=2011/month=7/part-0.parquet" 
+ [35] "/home/danielle/Datasets/nyc-taxi/year=2011/month=8/part-0.parquet" 
+ [36] "/home/danielle/Datasets/nyc-taxi/year=2011/month=9/part-0.parquet" 
+ [37] "/home/danielle/Datasets/nyc-taxi/year=2012/month=1/part-0.parquet" 
+ [38] "/home/danielle/Datasets/nyc-taxi/year=2012/month=10/part-0.parquet"
+ [39] "/home/danielle/Datasets/nyc-taxi/year=2012/month=11/part-0.parquet"
+ [40] "/home/danielle/Datasets/nyc-taxi/year=2012/month=12/part-0.parquet"
+ [41] "/home/danielle/Datasets/nyc-taxi/year=2012/month=2/part-0.parquet" 
+ [42] "/home/danielle/Datasets/nyc-taxi/year=2012/month=3/part-0.parquet" 
+ [43] "/home/danielle/Datasets/nyc-taxi/year=2012/month=4/part-0.parquet" 
+ [44] "/home/danielle/Datasets/nyc-taxi/year=2012/month=5/part-0.parquet" 
+ [45] "/home/danielle/Datasets/nyc-taxi/year=2012/month=6/part-0.parquet" 
+ [46] "/home/danielle/Datasets/nyc-taxi/year=2012/month=7/part-0.parquet" 
+ [47] "/home/danielle/Datasets/nyc-taxi/year=2012/month=8/part-0.parquet" 
+ [48] "/home/danielle/Datasets/nyc-taxi/year=2012/month=9/part-0.parquet" 
+ [49] "/home/danielle/Datasets/nyc-taxi/year=2013/month=1/part-0.parquet" 
+ [50] "/home/danielle/Datasets/nyc-taxi/year=2013/month=10/part-0.parquet"
+ [51] "/home/danielle/Datasets/nyc-taxi/year=2013/month=11/part-0.parquet"
+ [52] "/home/danielle/Datasets/nyc-taxi/year=2013/month=12/part-0.parquet"
+ [53] "/home/danielle/Datasets/nyc-taxi/year=2013/month=2/part-0.parquet" 
+ [54] "/home/danielle/Datasets/nyc-taxi/year=2013/month=3/part-0.parquet" 
+ [55] "/home/danielle/Datasets/nyc-taxi/year=2013/month=4/part-0.parquet" 
+ [56] "/home/danielle/Datasets/nyc-taxi/year=2013/month=5/part-0.parquet" 
+ [57] "/home/danielle/Datasets/nyc-taxi/year=2013/month=6/part-0.parquet" 
+ [58] "/home/danielle/Datasets/nyc-taxi/year=2013/month=7/part-0.parquet" 
+ [59] "/home/danielle/Datasets/nyc-taxi/year=2013/month=8/part-0.parquet" 
+ [60] "/home/danielle/Datasets/nyc-taxi/year=2013/month=9/part-0.parquet" 
+ [61] "/home/danielle/Datasets/nyc-taxi/year=2014/month=1/part-0.parquet" 
+ [62] "/home/danielle/Datasets/nyc-taxi/year=2014/month=10/part-0.parquet"
+ [63] "/home/danielle/Datasets/nyc-taxi/year=2014/month=11/part-0.parquet"
+ [64] "/home/danielle/Datasets/nyc-taxi/year=2014/month=12/part-0.parquet"
+ [65] "/home/danielle/Datasets/nyc-taxi/year=2014/month=2/part-0.parquet" 
+ [66] "/home/danielle/Datasets/nyc-taxi/year=2014/month=3/part-0.parquet" 
+ [67] "/home/danielle/Datasets/nyc-taxi/year=2014/month=4/part-0.parquet" 
+ [68] "/home/danielle/Datasets/nyc-taxi/year=2014/month=5/part-0.parquet" 
+ [69] "/home/danielle/Datasets/nyc-taxi/year=2014/month=6/part-0.parquet" 
+ [70] "/home/danielle/Datasets/nyc-taxi/year=2014/month=7/part-0.parquet" 
+ [71] "/home/danielle/Datasets/nyc-taxi/year=2014/month=8/part-0.parquet" 
+ [72] "/home/danielle/Datasets/nyc-taxi/year=2014/month=9/part-0.parquet" 
+ [73] "/home/danielle/Datasets/nyc-taxi/year=2015/month=1/part-0.parquet" 
+ [74] "/home/danielle/Datasets/nyc-taxi/year=2015/month=10/part-0.parquet"
+ [75] "/home/danielle/Datasets/nyc-taxi/year=2015/month=11/part-0.parquet"
+ [76] "/home/danielle/Datasets/nyc-taxi/year=2015/month=12/part-0.parquet"
+ [77] "/home/danielle/Datasets/nyc-taxi/year=2015/month=2/part-0.parquet" 
+ [78] "/home/danielle/Datasets/nyc-taxi/year=2015/month=3/part-0.parquet" 
+ [79] "/home/danielle/Datasets/nyc-taxi/year=2015/month=4/part-0.parquet" 
+ [80] "/home/danielle/Datasets/nyc-taxi/year=2015/month=5/part-0.parquet" 
+ [81] "/home/danielle/Datasets/nyc-taxi/year=2015/month=6/part-0.parquet" 
+ [82] "/home/danielle/Datasets/nyc-taxi/year=2015/month=7/part-0.parquet" 
+ [83] "/home/danielle/Datasets/nyc-taxi/year=2015/month=8/part-0.parquet" 
+ [84] "/home/danielle/Datasets/nyc-taxi/year=2015/month=9/part-0.parquet" 
+ [85] "/home/danielle/Datasets/nyc-taxi/year=2016/month=1/part-0.parquet" 
+ [86] "/home/danielle/Datasets/nyc-taxi/year=2016/month=10/part-0.parquet"
+ [87] "/home/danielle/Datasets/nyc-taxi/year=2016/month=11/part-0.parquet"
+ [88] "/home/danielle/Datasets/nyc-taxi/year=2016/month=12/part-0.parquet"
+ [89] "/home/danielle/Datasets/nyc-taxi/year=2016/month=2/part-0.parquet" 
+ [90] "/home/danielle/Datasets/nyc-taxi/year=2016/month=3/part-0.parquet" 
+ [91] "/home/danielle/Datasets/nyc-taxi/year=2016/month=4/part-0.parquet" 
+ [92] "/home/danielle/Datasets/nyc-taxi/year=2016/month=5/part-0.parquet" 
+ [93] "/home/danielle/Datasets/nyc-taxi/year=2016/month=6/part-0.parquet" 
+ [94] "/home/danielle/Datasets/nyc-taxi/year=2016/month=7/part-0.parquet" 
+ [95] "/home/danielle/Datasets/nyc-taxi/year=2016/month=8/part-0.parquet" 
+ [96] "/home/danielle/Datasets/nyc-taxi/year=2016/month=9/part-0.parquet" 
+ [97] "/home/danielle/Datasets/nyc-taxi/year=2017/month=1/part-0.parquet" 
+ [98] "/home/danielle/Datasets/nyc-taxi/year=2017/month=10/part-0.parquet"
+ [99] "/home/danielle/Datasets/nyc-taxi/year=2017/month=11/part-0.parquet"
+[100] "/home/danielle/Datasets/nyc-taxi/year=2017/month=12/part-0.parquet"
+[101] "/home/danielle/Datasets/nyc-taxi/year=2017/month=2/part-0.parquet" 
+[102] "/home/danielle/Datasets/nyc-taxi/year=2017/month=3/part-0.parquet" 
+[103] "/home/danielle/Datasets/nyc-taxi/year=2017/month=4/part-0.parquet" 
+[104] "/home/danielle/Datasets/nyc-taxi/year=2017/month=5/part-0.parquet" 
+[105] "/home/danielle/Datasets/nyc-taxi/year=2017/month=6/part-0.parquet" 
+[106] "/home/danielle/Datasets/nyc-taxi/year=2017/month=7/part-0.parquet" 
+[107] "/home/danielle/Datasets/nyc-taxi/year=2017/month=8/part-0.parquet" 
+[108] "/home/danielle/Datasets/nyc-taxi/year=2017/month=9/part-0.parquet" 
+[109] "/home/danielle/Datasets/nyc-taxi/year=2018/month=1/part-0.parquet" 
+[110] "/home/danielle/Datasets/nyc-taxi/year=2018/month=10/part-0.parquet"
+[111] "/home/danielle/Datasets/nyc-taxi/year=2018/month=11/part-0.parquet"
+[112] "/home/danielle/Datasets/nyc-taxi/year=2018/month=12/part-0.parquet"
+[113] "/home/danielle/Datasets/nyc-taxi/year=2018/month=2/part-0.parquet" 
+[114] "/home/danielle/Datasets/nyc-taxi/year=2018/month=3/part-0.parquet" 
+[115] "/home/danielle/Datasets/nyc-taxi/year=2018/month=4/part-0.parquet" 
+[116] "/home/danielle/Datasets/nyc-taxi/year=2018/month=5/part-0.parquet" 
+[117] "/home/danielle/Datasets/nyc-taxi/year=2018/month=6/part-0.parquet" 
+[118] "/home/danielle/Datasets/nyc-taxi/year=2018/month=7/part-0.parquet" 
+[119] "/home/danielle/Datasets/nyc-taxi/year=2018/month=8/part-0.parquet" 
+[120] "/home/danielle/Datasets/nyc-taxi/year=2018/month=9/part-0.parquet" 
+[121] "/home/danielle/Datasets/nyc-taxi/year=2019/month=1/part-0.parquet" 
+[122] "/home/danielle/Datasets/nyc-taxi/year=2019/month=10/part-0.parquet"
+[123] "/home/danielle/Datasets/nyc-taxi/year=2019/month=11/part-0.parquet"
+[124] "/home/danielle/Datasets/nyc-taxi/year=2019/month=12/part-0.parquet"
+[125] "/home/danielle/Datasets/nyc-taxi/year=2019/month=2/part-0.parquet" 
+[126] "/home/danielle/Datasets/nyc-taxi/year=2019/month=3/part-0.parquet" 
+[127] "/home/danielle/Datasets/nyc-taxi/year=2019/month=4/part-0.parquet" 
+[128] "/home/danielle/Datasets/nyc-taxi/year=2019/month=5/part-0.parquet" 
+[129] "/home/danielle/Datasets/nyc-taxi/year=2019/month=6/part-0.parquet" 
+[130] "/home/danielle/Datasets/nyc-taxi/year=2019/month=7/part-0.parquet" 
+[131] "/home/danielle/Datasets/nyc-taxi/year=2019/month=8/part-0.parquet" 
+[132] "/home/danielle/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet" 
+[133] "/home/danielle/Datasets/nyc-taxi/year=2020/month=1/part-0.parquet" 
+[134] "/home/danielle/Datasets/nyc-taxi/year=2020/month=10/part-0.parquet"
+[135] "/home/danielle/Datasets/nyc-taxi/year=2020/month=11/part-0.parquet"
+[136] "/home/danielle/Datasets/nyc-taxi/year=2020/month=12/part-0.parquet"
+[137] "/home/danielle/Datasets/nyc-taxi/year=2020/month=2/part-0.parquet" 
+[138] "/home/danielle/Datasets/nyc-taxi/year=2020/month=3/part-0.parquet" 
+[139] "/home/danielle/Datasets/nyc-taxi/year=2020/month=4/part-0.parquet" 
+[140] "/home/danielle/Datasets/nyc-taxi/year=2020/month=5/part-0.parquet" 
+[141] "/home/danielle/Datasets/nyc-taxi/year=2020/month=6/part-0.parquet" 
+[142] "/home/danielle/Datasets/nyc-taxi/year=2020/month=7/part-0.parquet" 
+[143] "/home/danielle/Datasets/nyc-taxi/year=2020/month=8/part-0.parquet" 
+[144] "/home/danielle/Datasets/nyc-taxi/year=2020/month=9/part-0.parquet" 
+[145] "/home/danielle/Datasets/nyc-taxi/year=2021/month=1/part-0.parquet" 
+[146] "/home/danielle/Datasets/nyc-taxi/year=2021/month=10/part-0.parquet"
+[147] "/home/danielle/Datasets/nyc-taxi/year=2021/month=11/part-0.parquet"
+[148] "/home/danielle/Datasets/nyc-taxi/year=2021/month=12/part-0.parquet"
+[149] "/home/danielle/Datasets/nyc-taxi/year=2021/month=2/part-0.parquet" 
+[150] "/home/danielle/Datasets/nyc-taxi/year=2021/month=3/part-0.parquet" 
+[151] "/home/danielle/Datasets/nyc-taxi/year=2021/month=4/part-0.parquet" 
+[152] "/home/danielle/Datasets/nyc-taxi/year=2021/month=5/part-0.parquet" 
+[153] "/home/danielle/Datasets/nyc-taxi/year=2021/month=6/part-0.parquet" 
+[154] "/home/danielle/Datasets/nyc-taxi/year=2021/month=7/part-0.parquet" 
+[155] "/home/danielle/Datasets/nyc-taxi/year=2021/month=8/part-0.parquet" 
+[156] "/home/danielle/Datasets/nyc-taxi/year=2021/month=9/part-0.parquet" 
+[157] "/home/danielle/Datasets/nyc-taxi/year=2022/month=1/part-0.parquet" 
+[158] "/home/danielle/Datasets/nyc-taxi/year=2022/month=2/part-0.parquet" </code></pre>
+</div>
+</div>
+</section>
+<section id="partition-structure-matters" class="slide level2">
+<h2>Partition structure matters</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1"></a><span class="fu">tic</span>()</span>
+<span id="cb73-2"><a href="#cb73-2"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb73-3"><a href="#cb73-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2016</span>, month <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb73-4"><a href="#cb73-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10116018</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.012 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1"></a><span class="fu">tic</span>()</span>
+<span id="cb77-2"><a href="#cb77-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb77-3"><a href="#cb77-3"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">==</span> <span class="dv">138</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb77-4"><a href="#cb77-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10823589</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>2.518 sec elapsed</code></pre>
+</div>
+</div>
+</section>
+<section id="writing-datasets" class="slide level2">
+<h2>Writing datasets</h2>
+<div class="cell" data-hash="slides_cache/revealjs/writing-dataset_df4b8e6934edbfcff541b1edb0d88e1a">
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1"></a><span class="fu">tic</span>()</span>
+<span id="cb81-2"><a href="#cb81-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb81-3"><a href="#cb81-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2017</span>) <span class="sc">|&gt;</span></span>
+<span id="cb81-4"><a href="#cb81-4"></a>  <span class="fu">group_by</span>(month, vendor_name) <span class="sc">|&gt;</span></span>
+<span id="cb81-5"><a href="#cb81-5"></a>  <span class="fu">write_dataset</span>(<span class="st">"~/Datasets/nyc-taxi_2017"</span>)</span>
+<span id="cb81-6"><a href="#cb81-6"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>17.617 sec elapsed</code></pre>
+</div>
+</div>
 
 <div class="footer footer-default">
 <p><a href="https://arrow-user2022.netlify.app">arrow-user2022.netlify.app</a></p>

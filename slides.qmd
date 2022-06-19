@@ -523,3 +523,101 @@ toc()
 ```{r numerology-print}
 numerology
 ```
+
+
+# Big data file formats
+
+Section 9: In which we talk about parquet files
+
+## Big data file formats
+
+![](img/arrow-read-write-dataset.png)
+
+## Parquet files are "row chunked"
+
+![](img/parquet-chunking.png)
+
+
+## Parquet files are "row chunked, column-arranged, and paged"
+
+![](img/parquet-paging.png)
+
+
+
+## Parquet file organization
+
+![](img/parquet-organisation.png)
+
+
+## Reading parquet files
+
+```{r basic-parquet-read, message=FALSE}
+parquet_file <- "~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"
+
+nyc_taxi_2019_09 <- read_parquet(parquet_file)
+nyc_taxi_2019_09
+```
+
+## Reading parquet files
+
+```{r selective-parquet-read}
+parquet_file |>
+  read_parquet(col_select = matches("pickup"))
+```
+
+## Selective reads are faster
+
+```{r timing-parquet-reads}
+tic()
+parquet_file |>
+  read_parquet() |>
+  invisible() # suppress printing
+toc()
+
+tic()
+parquet_file |>
+  read_parquet(col_select = matches("pickup")) |>
+  invisible()
+toc()
+```
+
+
+# Multi-file datasets
+
+Section 10: In which we talk about partitioning
+
+## NYC taxi data files
+
+```{r nyc-taxi-files}
+nyc_taxi$files
+```
+
+## Partition structure matters
+
+```{r taxi-subset-filtering-times}
+tic()
+nyc_taxi |>
+  filter(year == 2016, month == 9) |>
+  nrow() 
+toc()
+
+tic()
+nyc_taxi |> 
+  filter(pickup_location_id == 138) |> 
+  nrow() 
+toc()
+```
+
+## Writing datasets
+
+```{r writing-dataset, cache=TRUE}
+tic()
+nyc_taxi |> 
+  filter(year == 2017) |>
+  group_by(month, vendor_name) |>
+  write_dataset("~/Datasets/nyc-taxi_2017")
+toc()
+```
+
+
+
