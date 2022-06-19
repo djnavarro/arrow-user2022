@@ -2,26 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://arrow-user2022.netlify.app/hello-arrow.html</loc>
-    <lastmod>2022-06-19T09:41:59.004Z</lastmod>
+    <lastmod>2022-06-19T11:18:28.216Z</lastmod>
+  </url>
+  <url>
+    <loc>https://arrow-user2022.netlify.app/slides.html</loc>
+    <lastmod>2022-06-19T11:19:55.098Z</lastmod>
   </url>
   <url>
     <loc>https://arrow-user2022.netlify.app/packages-and-data.html</loc>
-    <lastmod>2022-06-19T09:42:05.217Z</lastmod>
+    <lastmod>2022-06-19T11:19:50.649Z</lastmod>
   </url>
   <url>
     <loc>https://arrow-user2022.netlify.app/advanced.html</loc>
-    <lastmod>2022-06-19T09:42:07.560Z</lastmod>
+    <lastmod>2022-06-19T11:19:47.565Z</lastmod>
   </url>
   <url>
     <loc>https://arrow-user2022.netlify.app/data-storage.html</loc>
-    <lastmod>2022-06-19T09:42:25.391Z</lastmod>
+    <lastmod>2022-06-19T11:19:04.842Z</lastmod>
   </url>
   <url>
     <loc>https://arrow-user2022.netlify.app/index.html</loc>
-    <lastmod>2022-06-19T09:42:35.764Z</lastmod>
+    <lastmod>2022-06-19T11:19:21.081Z</lastmod>
   </url>
   <url>
     <loc>https://arrow-user2022.netlify.app/data-wrangling.html</loc>
-    <lastmod>2022-06-19T09:42:35.124Z</lastmod>
+    <lastmod>2022-06-19T11:19:19.908Z</lastmod>
   </url>
 </urlset>

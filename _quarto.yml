@@ -27,6 +27,8 @@ website:
             text: "3: Data Storage"
           - href: advanced.html
             text: "4: Advanced Arrow"
+      - href: slides.html
+        text: Slides
 
 format:
   html:

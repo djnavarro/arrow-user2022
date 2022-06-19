@@ -2,6 +2,19 @@
 title: "Packages and Data"
 ---
 
+
+Welcome to the workshop! On this page you'll find information about the packages and data sets we'll be using. The workshop proper starts on the [Hello Arrow](hello-arrow.html) page, but you may find this page useful to read before the workshop begins. 
+
+<br> 
+
+```{r}
+#| echo: false
+#| out-width: 70%
+#| fig-align: center
+knitr::include_graphics("img/social-media-image.png")
+```
+
+
 ## Packages
 
 To install the required packages, run the following:
@@ -29,6 +42,7 @@ library(scales)
 library(janitor)
 library(fs)
 ```
+
 
 The workshop doesn't use graphics or spatial data much but they are used on this page and again at the end. Suggested packages if you want to run those parts of the code can be installed with the following:
 
@@ -216,5 +230,6 @@ left_join(
 ```
 
 Pretty, yes?
+
 
 

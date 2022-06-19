@@ -1,0 +1,28 @@
+---
+title: "Larger-Than-Memory Data Workflows with Apache Arrow"
+author: "Danielle Navarro, Jonathan Keane, Stephanie Hazlitt"
+format: 
+  revealjs:
+    theme: simple
+    footer: "[arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)"
+---
+
+## Housekeeping
+
+- Website: [arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)
+    - Written tutorial, data sets, exercises
+- Instructors: 
+    - Danielle Navarro
+    - Jonathan Keane
+    - Stephanie Hazlitt
+
+## Structure
+
+- Hello Arrow
+- Data Wrangling
+- Data Storage
+- Advanced Arrow
+
+# Hello Arrow
+
+
