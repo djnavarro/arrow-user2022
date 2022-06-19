@@ -1,0 +1,8 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.data/nyc-taxi-airports.zip
+
+/.quarto/

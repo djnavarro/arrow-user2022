@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.282">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Apache Arrow in R - Part 1: Hello Arrow</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apache Arrow in R</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html">Home</a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false">Tutorial</a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+        <li>
+    <a class="dropdown-item" href="./packages-and-data.html">
+ <span class="dropdown-text">0: Packages and Data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./hello-arrow.html">
+ <span class="dropdown-text">1: Hello Arrow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-wrangling.html">
+ <span class="dropdown-text">2: Data Wrangling</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-storage.html">
+ <span class="dropdown-text">3: Data Storage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./advanced.html">
+ <span class="dropdown-text">4: Advanced Arrow</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#get-started" id="toc-get-started" class="nav-link active" data-scroll-target="#get-started">Let’s get started!</a></li>
+  <li><a href="#what-is-arrow" id="toc-what-is-arrow" class="nav-link" data-scroll-target="#what-is-arrow">What is Arrow and why should you care?</a>
+  <ul class="collapse">
+  <li><a href="#arrow-as-a-multi-language-toolbox" id="toc-arrow-as-a-multi-language-toolbox" class="nav-link" data-scroll-target="#arrow-as-a-multi-language-toolbox">Arrow as a multi-language toolbox</a></li>
+  <li><a href="#arrow-for-accelerated-data-interchange" id="toc-arrow-for-accelerated-data-interchange" class="nav-link" data-scroll-target="#arrow-for-accelerated-data-interchange">Arrow for accelerated data interchange</a></li>
+  <li><a href="#arrow-for-efficient-in-memory-processing" id="toc-arrow-for-efficient-in-memory-processing" class="nav-link" data-scroll-target="#arrow-for-efficient-in-memory-processing">Arrow for efficient in-memory processing</a></li>
+  </ul></li>
+  <li><a href="#arrow-for-r" id="toc-arrow-for-r" class="nav-link" data-scroll-target="#arrow-for-r">What can the <strong>arrow</strong> package do for R users?</a>
+  <ul class="collapse">
+  <li><a href="#readwrite-capabilities" id="toc-readwrite-capabilities" class="nav-link" data-scroll-target="#readwrite-capabilities">Read/write capabilities</a></li>
+  <li><a href="#data-manipulation" id="toc-data-manipulation" class="nav-link" data-scroll-target="#data-manipulation">Data manipulation</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Part 1: Hello Arrow</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<p>Hello, and welcome to the Apache Arrow workshop! We hope you find it valuable.</p>
+<p>If you’ve arrived on this page then presumably you’re an R user with some familiarity with <strong>tidyverse</strong> (especially <strong>dplyr</strong>) workflows, and would like to learn more about how to work with big data sets using the <strong>arrow</strong> package for R. Our goal in this workshop is to help you get there!</p>
+<p>In this tutorial you will learn how to use the <strong>arrow</strong> R package to create seamless engineering-to-analysis data pipelines. You’ll learn how to use the parquet file format for efficient storage and data access. You’ll learn how to exercise fine control over data types to avoid common data pipeline problems. During the tutorial you’ll be processing larger-than-memory files and multi-file datasets with familiar <strong>dplyr</strong> syntax, and working with data in cloud storage. You’ll learn how the Apache Arrow project is structured and what you can do with Arrow to handle very large data sets. With any luck, you’ll have some fun too!</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="img/arrow-hex-spacing.png" class="img-fluid figure-img" width="300"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Hopefully, you’ve installed the packages you’ll need and have a copy of the downloaded onto your local machine. If not, it’s probably a good idea to check out the <a href="packages-and-data.html">packages and data</a> page before continuing :)</p>
+<section id="get-started" class="level2">
+<h2 class="anchored" data-anchor-id="get-started">Let’s get started!</h2>
+<p>If you’re going to go through this workshop, we ought to be able to give you a decent motivation for doing so, right? There’s no point in you learning about the <strong>arrow</strong> package if we can’t explain why it’s a good thing to know! But as all good writers know, sometimes it’s more powerful to show rather than tell, so let’s just start using <strong>arrow</strong> now and hold the explanations to the end.</p>
+<p>Let’s start by loading <strong>arrow</strong> and <strong>dplyr</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Actually, you can assume that every page on this site starts with those two packages and all the other dependencies loaded, even if this code chunk isn’t shown explicitly:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dbplyr)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tictoc)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fs)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggrepel)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>When you do this yourself you’ll see some additional messages that I’ve hidden from the output. Now that we have the packages loaded, we have access to the <strong>dplyr</strong> functions for data manipulation and (importantly!) the <strong>arrow</strong> back end that allows you to use <strong>dplyr</strong> syntax to manipulate data sets that are stored in Arrow.</p>
+<p>Let’s see this in action. I’ll use the <code>open_dataset()</code> function to connect to the NYC taxi data. On my machine this data is stored in the <code>~/Datasets/nyc-taxi</code> folder, so my code looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Yours will look slightly different depending on where you saved your local copy of the data. Now, if you remember from when you downloaded the data this is 69GB of information, yet <code>open_dataset()</code> returns a result almost immediately. What’s happened here is that <strong>arrow</strong> has scanned the contents of that folder, found the relevant files, and created an <code>nyc_taxi</code> object that stores some metadata about those files. Here’s what that looks like:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FileSystemDataset with 158 Parquet files
+vendor_name: string
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+trip_distance: double
+pickup_longitude: double
+pickup_latitude: double
+rate_code: string
+store_and_fwd: string
+dropoff_longitude: double
+dropoff_latitude: double
+payment_type: string
+fare_amount: double
+extra: double
+mta_tax: double
+tip_amount: double
+tolls_amount: double
+total_amount: double
+improvement_surcharge: double
+congestion_surcharge: double
+pickup_location_id: int64
+dropoff_location_id: int64
+year: int32
+month: int32</code></pre>
+</div>
+</div>
+<p>For an R user used to working with data frames and tibbles, this output is likely to be unfamiliar. Each variable is listed as a row in the output, and next to the name of each variable you can see the type of data stored in it. It does represent a tabular data set just like a data frame, but it’s a different kind of thing. It has to be: behind the scenes there are 1.7 billion rows of data in one huge table, and this is just too big to load into memory. However, we can still work with it anyway. Here’s a simple example: I’ll extract the first six rows using the <code>head()</code> function and then <code>collect()</code> those rows from Arrow and return them to R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 24
+  vendor_name pickup_datetime     dropoff_datetime    passenger_count
+  &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;
+1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1
+2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3
+3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5
+4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1
+5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1
+6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2
+# … with 20 more variables: trip_distance &lt;dbl&gt;, pickup_longitude &lt;dbl&gt;,
+#   pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;, store_and_fwd &lt;chr&gt;,
+#   dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;, payment_type &lt;chr&gt;,
+#   fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;, tip_amount &lt;dbl&gt;,
+#   tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;, improvement_surcharge &lt;dbl&gt;,
+#   congestion_surcharge &lt;dbl&gt;, pickup_location_id &lt;int&gt;,
+#   dropoff_location_id &lt;int&gt;, year &lt;int&gt;, month &lt;int&gt;</code></pre>
+</div>
+</div>
+<p>The output here is a perfectly ordinary tibble object that now exists in R just like any other object, and – in case you haven’t already looked at it – we have posted a <a href="./nyc-taxi-data.html#data-dictionary">data dictionary</a> explaining what each of these columns represents. Of course, this version of the table only has a handful of rows, but if you imagine this table stretching out for a <em>lot</em> more you have a good sense of what the actual <code>nyc_taxi</code> data looks like. How many rows?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(nyc_taxi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1672590319</code></pre>
+</div>
+</div>
+<p>Yes, this really is a table with 1.7 billion rows. Yikes.</p>
+<p>Okay so let’s do something with it. Suppose I wanted to look at the five-year trends for the number of taxi rides in NYC, both in total and specifically for shared trips that have multiple passengers. I can do this using <strong>dplyr</strong> commands like this:</p>
+<ul>
+<li>use <code>filter()</code> to limit the data to the period from 2017 to 2021</li>
+<li>use <code>group_by()</code> to set <code>year</code> as the grouping variable</li>
+<li>use <code>summarize()</code> to count the number of <code>all_trips</code> and <code>shared_trips</code></li>
+<li>use <code>mutate()</code> to compute a <code>pct_shared</code> column with the percent of trips shared</li>
+<li>use <code>collect()</code> to trigger execution of the query and return results to R</li>
+</ul>
+<p>Here’s what that looks like:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2021</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">all_trips =</span> <span class="fu">n</span>(),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">shared_trips =</span> <span class="fu">sum</span>(passenger_count <span class="sc">&gt;</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct_shared =</span> shared_trips <span class="sc">/</span> all_trips <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;
+1  2017 113495512     32296166       28.5
+2  2018 102797401     28796633       28.0
+3  2019  84393604     23515989       27.9
+4  2020  24647055      5837960       23.7
+5  2021  30902618      7221844       23.4</code></pre>
+</div>
+</div>
+<p>Try typing this out yourself and then have a go at the exercises!</p>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Exercises
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Problems</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Solution 1</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Solution 2</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<ol type="1">
+<li>Calculate the total number of rides for every month in 2019</li>
+<li>For each month in 2019, find the distance travelled by the longest recorded taxi ride that month and sort the results in month order</li>
+</ol>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2019</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(month) <span class="sc">|&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 2
+   month       n
+   &lt;int&gt;   &lt;int&gt;
+ 1    11 6877463
+ 2    10 7213588
+ 3    12 6895933
+ 4     1 7667255
+ 5     2 7018750
+ 6     3 7832035
+ 7     4 7432826
+ 8     5 7564884
+ 9     6 6940489
+10     7 6310134
+11     8 6072851
+12     9 6567396</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2019</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">|&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">longest_trip =</span> <span class="fu">max</span>(trip_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(month) <span class="sc">|&gt;</span> </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 2
+   month longest_trip
+   &lt;int&gt;        &lt;dbl&gt;
+ 1     1         832.
+ 2     2         702.
+ 3     3         237.
+ 4     4         831.
+ 5     5         401.
+ 6     6       45977.
+ 7     7         312.
+ 8     8         602.
+ 9     9         604.
+10    10         308.
+11    11         701.
+12    12       19130.</code></pre>
+</div>
+</div>
+<p>And there you have it! Your first data analysis using <strong>arrow</strong> is done. Yay!</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="what-is-arrow" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-arrow">What is Arrow and why should you care?</h2>
+<p>Okay, let’s take a moment to unpack this. We just analyzed 1.7 billion rows of data in R, a language that has not traditionally been thought to be ideal for big data! How did we do that? Clearly the <strong>arrow</strong> package is doing some magic, but what is that magic and how does it work?</p>
+<p>To demystify what just happened here we need talk about what the <a href="https://arrow.apache.org">Apache Arrow</a> project is all about and why it’s exciting. So let’s start at the beginning. There’s a one sentence description of Arrow that I really like, and has an almost haiku-like quality to it</p>
+<blockquote class="blockquote">
+<p>A multi-language toolbox <br> for accelerated data interchange <br> and in-memory processing</p>
+</blockquote>
+<p>This description immediately tells you three important things:</p>
+<ul>
+<li>Arrow is a single project that has implementations or bindings in many different programming languages: whether you use R, Python, C++, Ruby, Rust, Julia, JavaScript, or a variety of other languages, you can use Arrow.</li>
+<li>Arrow makes it easier and faster (sometimes shockingly faster!) to share data among different applications and programming languages</li>
+<li>Arrow formats exist to structure data efficiently in-memory (as opposed to on-disk), and provides compute engines to allow you process those data</li>
+</ul>
+<p>Let’s unpack these three things.</p>
+<section id="arrow-as-a-multi-language-toolbox" class="level3">
+<h3 class="anchored" data-anchor-id="arrow-as-a-multi-language-toolbox">Arrow as a multi-language toolbox</h3>
+<p>At an abstract level, Arrow provides a collection of specifications for how tabular data should be stored in-memory, and how that data should be communicated when transferred from one process to another. That’s the top level in the diagram below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/arrow-libraries-structure.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>There are several independent implementations of the Arrow standards, shown in the middle layer in the diagram. At present there are libraries in C++, C#, Go, Java, JavaScript, Julia and Rust, so anyone who uses one of those languages can store, manipulate, and communicate Arrow-formatted data sets. Because these are independent libraries, they are routinely tested against one another to ensure they produce the same behaviour!</p>
+<p>For other programming languages there isn’t a native Arrow implementation, and instead the libraries supply bindings to the Arrow C++ library. That’s what happens for R, Python, Ruby, and MATLAB, and is shown in the bottom layer of the diagram above. If you’re using one of these languages, you can still work with Arrow data using these bindings. In R, for example, those bindings are supplied by the <strong>arrow</strong> package: it allows R users to write native R code that is translated to instructions that get executed by the Arrow C++ library.</p>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+The Arrow documentation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Because Arrow is a multi-language project, the documentation ends up spread across several places. R users new to the project will be most interested in the <a href="https://arrow.apache.org/cookbook/r/">Apache Arrow R cookbook</a> and the <a href="https://arrow.apache.org/docs/r/"><strong>arrow</strong> package website</a>. When you’re ready to look at the detail, it’s helpful to read a little on the <a href="https://arrow.apache.org/docs/format/Columnar.html">Arrow specification</a>. If you’re interested in contributing to the project the <a href="https://arrow.apache.org/docs/developers/contributing.html">new contributor’s guide</a> has information relevant for R and other languages.</p>
+</div>
+</div>
+</section>
+<section id="arrow-for-accelerated-data-interchange" class="level3">
+<h3 class="anchored" data-anchor-id="arrow-for-accelerated-data-interchange">Arrow for accelerated data interchange</h3>
+<p>One huge benefit to Arrow as a coherent multi-language toolbox is that it creates the possibility of using Arrow as a kind of “lingua franca” for data analysis, and that has huge benefits for allowing efficient communication. Here’s what we mean. The diagram below shows a situation where we have three applications, one written in R, another in Python, and a third one in C++.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/data-interchange-without-arrow.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Suppose we have a data frame in-memory in the R application, and we want to communicate that with the Python application. Python doesn’t natively use the same in-memory data structures as R: the Python app might be expecting to use pandas instead. So the data has to be converted from one in-memory format (data frame) to another (panda). If the data set is large, this conversion cost could be quite computationally expensive.</p>
+<p>But it’s worse than that too: the R and Python apps need some way to communicate. They don’t actually share the same memory, and they probably aren’t running on the same machine. So the apps would also need to agree on a communication standard: the data frame (in R memory) needs to be encoded – or “serialized”, to use the precise term – to a byte stream and transmitted as a message that can be decoded – or “deserialzed” – by Python at the other end and then reorganised into a panda data structure.</p>
+<p>All of that is extremely inefficient. When you add costs associated with serializing data to and from on-disk file storage (e.g., as a CSV file or a parquet file) you start to realise that all these “copy and convert” operations are using up a lot of your compute time!</p>
+<p>Now think about what happens if all three applications rely on an Arrow library. Once loaded, the data itself stays in memory allocated to Arrow, and the only thing that the applications have to do is pass pointers around! This is shown below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/data-interchange-with-arrow.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Better yet, if you ever need to transfer this data from one machine to another (e.g., if the applications are running on different machines and need local copies of the data), the Arrow specification tells you exactly what format to use to send the data, and – importantly – that format is designed so the “thing” you send over the communication channel has the exact same structure as the “thing” that has to be represented in memory. In other words, you don’t have to reorganised the message from the serialized format to something you can analyze: it’s already structured the right way!</p>
+<p>But wait, it gets even better! (Ugh, yes, we know this does sound like one of those tacky infomercials that promise you free steak knives if you call in the next five minutes, but it actually does get better…) Because there are all these Arrow libraries that exist in different languages, you don’t have to do much of the coding yourself. The “connecters” that link one system to another are already written for you.</p>
+<p>Neat, yes?</p>
+</section>
+<section id="arrow-for-efficient-in-memory-processing" class="level3">
+<h3 class="anchored" data-anchor-id="arrow-for-efficient-in-memory-processing">Arrow for efficient in-memory processing</h3>
+<p>So far we’ve talked about the value of Arrow in terms of its multi-lingual nature and ability to serve as an agreed-upon standard for data representation and transfer. These are huge benefits in themselves, but that’s a generic argument about the importance of standardization and providing libraries for as many languages as you can. It doesn’t necessarily mean that the Arrow specifications ought to be the ones we agree to. So is there a reason why we should adopt this specific tool as the standard? Well yes, there is: Arrow is designed for efficient data operations.</p>
+<p>Here’s what we mean. Let’s take this small table as our working example, containing four rows and three columns:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-data-asymmetries.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Although the data are rectangular in shape, a tabular data set has a fundamental asymmetry: rows refer to cases, and columns refer to variables. This almost always has the consequence that data stored in the same <em>column</em> are fundamentally similar. The years <code>1969</code> and <code>1959</code> are both integer valued (same type) and have related semantics (refer to a year-long period of time). What that means is that any operation you might want to do to <code>1969</code> (e.g., check if it was a leap year), you are probably likely to want to do the same operation with <code>1959</code>. From a data analysis point of view, these are very likely to be processed using the same instructions.</p>
+<p>The same doesn’t apply when it comes to rows. Although the year <code>1969</code> and the city <code>"New York"</code> are both properties associated with the Stonewall Inn riots, they have fundamentally different structure (one is represented as an integer, and the other as a string), and they have different semantics. You might want to check if <code>1969</code> was a leap year, but it makes no sense whatsoever to ask if New York city is a leap year, does it? In other words, from a data analysis perspective, we necessarily use different instructions to work with these two things.</p>
+<p>Okay, so now think about what happens when we want to store this table in memory. Memory addresses aren’t organised into two dimensional tables, they’re arranged as a sequential address space. That means we have to flatten this table into a one-dimensional structure. We can either do this row-wise, or we can do it column-wise. Here’s what that looks like:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-data-memory-buffers.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>On the left you can see what happens when cells are arranged row-wise. Adjacent cells aren’t very similar to each other. On the right, you can see what happens when cells are arranged column-wise (often referred to as a <em>columnar format</em>): adjacent items in memory tend to have the same type, and correspond to the same ontological category (e.g., cities are next to other cities, intra-city locations are next to other such locations).</p>
+<p>Yes, but why does this matter? It matters because modern processors have a feature that let you take this advantage of this kind of memory locality, known as “single instruction, multiple data” (SIMD). Using SIMD programming, it’s possible to send a <em>single</em> low level instruction to the CPU, and have the CPU execute it across an entire block of memory without needing to send separate instructions for each memory address. In some ways it’s similar to the ideas behind parallel computing by multithreading, but it applies at a much lower level!</p>
+<p>So as long as your data are organised in a columnar format (which Arrow data are) and your compute engine understands how to take advantage of modern CPU features like SIMD (which the Arrow compute engine does), you can speed up your data analysis by a substantial amount!</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-data-simd.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="arrow-for-r" class="level2">
+<h2 class="anchored" data-anchor-id="arrow-for-r">What can the <strong>arrow</strong> package do for R users?</h2>
+<p>Broadly speaking we can divide the core functionality of the <strong>arrow</strong> package into two types of operation: Reading and writing data, and manipulating data</p>
+<section id="readwrite-capabilities" class="level3">
+<h3 class="anchored" data-anchor-id="readwrite-capabilities">Read/write capabilities</h3>
+<p>The diagram below shows (most of) the read/write capabilities of arrow in a schematic fashion:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/arrow-read-write.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>There’s several things to comment on here.</p>
+<p>First, let’s look at the “destinations” column on the right hand side. You can read and write files (top right row) to your local storage, or you can send them to an S3 bucket. Regardless of where you’re reading from or writing to, <strong>arrow</strong> supports CSV (and other delimited text files), parquet, and feather formats. Not shown in the diagram are JSON files: <strong>arrow</strong> can read data from JSON format but not write to it.</p>
+<p>Second, let’s look at the “objects” column on the left hand side. This column shows the three main data objects you’re likely to work with using <strong>arrow</strong>: data frames (and tibbles), Arrow Tables, and Arrow Datasets. Data frames are regular R objects stored in R memory, and Tables are the analogous data structure stored in Arrow memory. In contrast, Arrow Datasets are more complicated objects used when the data are too large to fit in memory, and typically stored on disk as multiple files. You can read and write any of these objects to and from disk using <strong>arrow</strong>. (Note that there are other data structures used by <strong>arrow</strong> that aren’t shown here!)</p>
+<p>Third, let’s look at the “stream” row on the bottom right. Instead of writing data to file, the <strong>arrow</strong> package allows you to stream it to a remote process. You can do this with in-memory data objects like Tables and data frames, but not for Datasets. Although not shown on the diagram, you can also do this for Arrow Record Batches.</p>
+<p>Finally, there is one big omission from this table: Arrow Flight servers. The <strong>arrow</strong> package contains functionality supporting Arrow Flight, but that’s not covered in this workshop!</p>
+</section>
+<section id="data-manipulation" class="level3">
+<h3 class="anchored" data-anchor-id="data-manipulation">Data manipulation</h3>
+<p>The data manipulation abilities of the <strong>arrow</strong> package come in a few different forms. For instance, one thing that <strong>arrow</strong> does is provide a low-level interface to the Arrow C++ library: you can call the compute functions in the C++ library directly from R if you want. However, for most R users this isn’t what you really want to do, because the Arrow C++ library has its own syntax and doesn’t feel very “R-like”.</p>
+<p>To address this, <strong>arrow</strong> also supplies a <strong>dplyr</strong> backend, allowing R users to write normal <strong>dplyr</strong> code for data wrangling, and translating it into a form that the Arrow C++ library can execute. In that sense it’s very similar to the <strong>dbplyr</strong> package that does the same thing for SQL database queries:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/dplyr-backend.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>It’s this <strong>dplyr</strong> back end that we relied on in the demonstration at the start of the session.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

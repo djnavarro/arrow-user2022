@@ -1,0 +1,31 @@
+project:
+  type: website
+
+website:
+  title: "Apache Arrow in R"
+  navbar:
+    background: primary
+    left:
+      - href: index.qmd
+        text: Home
+      - text: Tutorial
+        menu:
+          - href: packages-and-data.html
+            text: "0: Packages and Data"
+          - href: hello-arrow.html
+            text: "1: Hello Arrow"
+          - href: data-wrangling.html
+            text: "2: Data Wrangling"
+          - href: data-storage.html
+            text: "3: Data Storage"
+          - href: advanced.html
+            text: "4: Advanced Arrow"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
+

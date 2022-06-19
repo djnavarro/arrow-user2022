@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.282">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Apache Arrow in R - Part 2: Data Wrangling with Arrow</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apache Arrow in R</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html">Home</a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false">Tutorial</a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+        <li>
+    <a class="dropdown-item" href="./packages-and-data.html">
+ <span class="dropdown-text">0: Packages and Data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./hello-arrow.html">
+ <span class="dropdown-text">1: Hello Arrow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-wrangling.html">
+ <span class="dropdown-text">2: Data Wrangling</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-storage.html">
+ <span class="dropdown-text">3: Data Storage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./advanced.html">
+ <span class="dropdown-text">4: Advanced Arrow</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#one-table-computations" id="toc-one-table-computations" class="nav-link active" data-scroll-target="#one-table-computations">One-table computations</a>
+  <ul class="collapse">
+  <li><a href="#example-1-basic-one-table-verbs" id="toc-example-1-basic-one-table-verbs" class="nav-link" data-scroll-target="#example-1-basic-one-table-verbs">Example 1: Basic one-table verbs</a></li>
+  <li><a href="#example-2-limitations" id="toc-example-2-limitations" class="nav-link" data-scroll-target="#example-2-limitations">Example 2: Limitations</a></li>
+  <li><a href="#the-nyc-taxi-zones-table" id="toc-the-nyc-taxi-zones-table" class="nav-link" data-scroll-target="#the-nyc-taxi-zones-table">The NYC taxi zones table</a></li>
+  <li><a href="#example-3-string-manipulation" id="toc-example-3-string-manipulation" class="nav-link" data-scroll-target="#example-3-string-manipulation">Example 3: String manipulation</a></li>
+  <li><a href="#example-4-datetime-support" id="toc-example-4-datetime-support" class="nav-link" data-scroll-target="#example-4-datetime-support">Example 4: Date/time support</a></li>
+  </ul></li>
+  <li><a href="#two-table-computations" id="toc-two-table-computations" class="nav-link" data-scroll-target="#two-table-computations">Two-table computations</a>
+  <ul class="collapse">
+  <li><a href="#example-5-basic-joins" id="toc-example-5-basic-joins" class="nav-link" data-scroll-target="#example-5-basic-joins">Example 5: Basic joins</a></li>
+  <li><a href="#example-6-traps-for-the-unwary" id="toc-example-6-traps-for-the-unwary" class="nav-link" data-scroll-target="#example-6-traps-for-the-unwary">Example 6: Traps for the unwary</a></li>
+  <li><a href="#schemas-and-data-types" id="toc-schemas-and-data-types" class="nav-link" data-scroll-target="#schemas-and-data-types">Schemas and data types</a></li>
+  <li><a href="#example-6-revisited-fixing-the-join" id="toc-example-6-revisited-fixing-the-join" class="nav-link" data-scroll-target="#example-6-revisited-fixing-the-join">Example 6 revisited: Fixing the join</a></li>
+  </ul></li>
+  <li><a href="#combining-arrow-with-duckdb" id="toc-combining-arrow-with-duckdb" class="nav-link" data-scroll-target="#combining-arrow-with-duckdb">Combining <strong>arrow</strong> with <strong>duckdb</strong></a>
+  <ul class="collapse">
+  <li><a href="#example-7-window-functions" id="toc-example-7-window-functions" class="nav-link" data-scroll-target="#example-7-window-functions">Example 7: Window functions</a></li>
+  <li><a href="#example-8-something-bigger" id="toc-example-8-something-bigger" class="nav-link" data-scroll-target="#example-8-something-bigger">Example 8: Something bigger!</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Part 2: Data Wrangling with Arrow</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<p>In this session we’ll explore the data manipulation capabilities of <strong>arrow</strong> in a little more detail. The back end that <strong>arrow</strong> supplies for <strong>dplyr</strong> has two main jobs: it provides a translation for the <strong>dplyr</strong> verbs themselves (e.g., <code>mutate()</code>, <code>select()</code>, <code>filter()</code>), and it translates the functions and expressions that are evaluated within those verbs (e.g., <code>year == 2019</code>). In terms of the diagrams we saw in the previous section, we’re focusing on the highlighted part of this <strong>dplyr</strong> schematic:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/dplyr-backend-focus.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<section id="one-table-computations" class="level2">
+<h2 class="anchored" data-anchor-id="one-table-computations">One-table computations</h2>
+<p>Let’s start by opening the <code>nyc_taxi</code> dataset:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="example-1-basic-one-table-verbs" class="level3">
+<h3 class="anchored" data-anchor-id="example-1-basic-one-table-verbs">Example 1: Basic one-table verbs</h3>
+<p>In the <a href="hello-arrow.html">Hello Arrow</a> session we started with an example exercise demonstrating that <strong>arrow</strong> allows you to use the major one-table verbs in <strong>dplyr</strong>. To spare you the effort of looking back to the earlier section, here’s the query:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2021</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">|&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">all_trips =</span> <span class="fu">n</span>(),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">shared_trips =</span> <span class="fu">sum</span>(passenger_count <span class="sc">&gt;</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct_shared =</span> shared_trips <span class="sc">/</span> all_trips <span class="sc">*</span> <span class="dv">100</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here is what happens when we <code>collect()</code> that query:</p>
+<div class="cell" data-hash="data-wrangling_cache/html/unnamed-chunk-5_7e3b44d4ec9506d4a5ab46a408b64a58">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">collect</span>(shared_rides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;
+1  2017 113495512     32296166       28.5
+2  2018 102797401     28796633       28.0
+3  2019  84393604     23515989       27.9
+4  2020  24647055      5837960       23.7
+5  2021  30902618      7221844       23.4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3.205 sec elapsed</code></pre>
+</div>
+</div>
+<p>Notice that almost all the basic one-table verbs appear in this example. The only one missing is <code>arrange()</code>, and if you did the exercises in the first session you’d have noticed that one of the problems requires you to use that one too. None of the computations are being done in R, but the <strong>arrow</strong> package provides the back end that translates the <strong>dplyr</strong> verbs and the expressions contained within to something that the Arrow C++ compute engine understands. It’s magical, but like any code-based magic it helps to recognize it is limited.</p>
+</section>
+<section id="example-2-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="example-2-limitations">Example 2: Limitations</h3>
+<p>Here’s an example. Suppose I decide those large numbers are annoying and want to express the results of the shared rides computations in millions of rides. It’s easy enough to do this with a single <code>mutate()</code>. First I’ll define a convenient helper function that simply divides by 1 million:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>millions <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">/</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then I can apply it separately to both of the trips variables:</p>
+<div class="cell" data-hash="data-wrangling_cache/html/unnamed-chunk-7_a05113cb01917795edecee58cac5b041">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">all_trips =</span> <span class="fu">millions</span>(all_trips),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">shared_trips =</span> <span class="fu">millions</span>(shared_trips)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;
+1  2017     113.         32.3        28.5
+2  2018     103.         28.8        28.0
+3  2019      84.4        23.5        27.9
+4  2020      24.6         5.84       23.7
+5  2021      30.9         7.22       23.4</code></pre>
+</div>
+</div>
+<p>When there are only a few variables this is easy, but it does get a little cumbersome when there are many so we often use scoped verbs <code>mutate_at()</code> or (in more recent releases of <strong>dplyr</strong>) use <code>across()</code> to apply a function across a tidy selection of variables. However, at present <strong>arrow</strong> doesn’t know how to translate this part of the <strong>dplyr</strong> grammar so both of these fail:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_at</span>(<span class="fu">c</span>(<span class="st">"all_trips"</span>, <span class="st">"shared_trips"</span>), millions) <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in if (deparse(expr[[1]]) == name) {: the condition has length &gt; 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions)) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error: Expression across(ends_with("trips"), millions) not supported in Arrow
+Call collect() first to pull data into R.</code></pre>
+</div>
+</div>
+<p>Besides resorting to the explicit mutate-each-variable-individually strategy, there are other workarounds. A common one is to recognize that most of the heavy lifting has already been completed in Arrow before ever needing to call <code>across()</code> (or a scoped verb). So it’s often possible to do all the hard work in Arrow, then <code>collect()</code> a small table into R, and then make use of the <strong>dplyr</strong> tools that weren’t accessible in Arrow. So, for example, both of these work:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate_at</span>(<span class="fu">c</span>(<span class="st">"all_trips"</span>, <span class="st">"shared_trips"</span>), millions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;
+1  2017     113.         32.3        28.5
+2  2018     103.         28.8        28.0
+3  2019      84.4        23.5        27.9
+4  2020      24.6         5.84       23.7
+5  2021      30.9         7.22       23.4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;
+1  2017     113.         32.3        28.5
+2  2018     103.         28.8        28.0
+3  2019      84.4        23.5        27.9
+4  2020      24.6         5.84       23.7
+5  2021      30.9         7.22       23.4</code></pre>
+</div>
+</div>
+</section>
+<section id="the-nyc-taxi-zones-table" class="level3">
+<h3 class="anchored" data-anchor-id="the-nyc-taxi-zones-table">The NYC taxi zones table</h3>
+<p>One limitation to the main table in the NYC Taxi data is that pickup and dropoff locations are encoded using a numeric <code>location_id</code> variable that doesn’t give any human-readable interpretation to the geographic regions. There is an <a href="data/taxi_zone_lookup.csv">auxiliary CSV table</a> provided by NYC TLC that we can use for this purpose. It’s a small table so we don’t need Arrow: we can load the data into R as a tibble. We’ll use the <code>read_csv_arrow()</code> function from the <strong>arrow</strong> package for this purpose:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 4
+   location_id borough       zone                    service_zone
+         &lt;int&gt; &lt;chr&gt;         &lt;chr&gt;                   &lt;chr&gt;       
+ 1           1 EWR           Newark Airport          EWR         
+ 2           2 Queens        Jamaica Bay             Boro Zone   
+ 3           3 Bronx         Allerton/Pelham Gardens Boro Zone   
+ 4           4 Manhattan     Alphabet City           Yellow Zone 
+ 5           5 Staten Island Arden Heights           Boro Zone   
+ 6           6 Staten Island Arrochar/Fort Wadsworth Boro Zone   
+ 7           7 Queens        Astoria                 Boro Zone   
+ 8           8 Queens        Astoria Park            Boro Zone   
+ 9           9 Queens        Auburndale              Boro Zone   
+10          10 Queens        Baisley Park            Boro Zone   
+# … with 255 more rows</code></pre>
+</div>
+</div>
+<p>This is a handy little table: the numeric code in the <code>location_id</code> variable in this table uses the same coding scheme as the <code>pickup_location_id</code> and <code>dropoff_location_id</code> variables in the main NYC Taxi table. The <code>borough</code> column indicates which broad region in the city the zone belongs to (e.g., Manhattan, Queens, Brooklyn), and the <code>zone</code> column provides a human readable name for each taxi zone (e.g., the zone specified by <code>location_id=4</code> refers to the Alphabet City district). Finally, there’s a <code>service_zone</code> column which isn’t very interesting for our purposes.</p>
+<p>Okay, let’s move this into Arrow:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones_arrow <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(nyc_taxi_zones)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones_arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table
+265 rows x 4 columns
+$location_id &lt;int32&gt;
+$borough &lt;string&gt;
+$zone &lt;string&gt;
+$service_zone &lt;string&gt;</code></pre>
+</div>
+</div>
+<p>To keep track of what just happened here, notice that we first read the data from disk into R memory, then cleaned the column names while still in R, and then created a copy of the data in Arrow memory:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/data-tracking.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>It’s that last object (the one in Arrow) that we’re going to manipulate, though we’ll write our commands in R with the help of the <strong>arrow</strong> and <strong>dplyr</strong> packages.</p>
+</section>
+<section id="example-3-string-manipulation" class="level3">
+<h3 class="anchored" data-anchor-id="example-3-string-manipulation">Example 3: String manipulation</h3>
+<p>The <code>nyc_taxi_zones_arrow</code> table is a handy one to look at for two reasons. Firstly it’s small (unlike the main <code>nyc_taxi</code> table!), so you can work with it quickly and let yourself make mistakes without worrying too much about computational efficiency. Secondly, it has text fields that make it a handy way to demonstrate <strong>arrow</strong> support for regular expressions and string manipulations.</p>
+<p>Here’s an example. Suppose I want to create an abbreviate the names of the taxi zones by removing vowels and spaces (e.g., <code>"Jamaica Bay"</code> becomes <code>"JmcBy"</code>), and remove anything following a slash (e.g., <code>"West Chelsea/Hudson Yards"</code> becomes <code>"WstChls"</code>). It’s not the best way of constructing abbreviations but it’ll do for illustrative purposes. For each of these abbreviations I want to calculate the string length, and then sort the results from longest to shortest. If I were writing this for an R data frame like <code>nyc_taxi_zones</code>, here’s the code I’d use:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones <span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[aeiou' ]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_remove_all</span>(<span class="st">"/.*"</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+<p>To do the same thing for an Arrow Table like <code>nyc_taxi_zones_arrow</code>, I have to make a few modifications. First, as you’d expect given what we covered in the “Hello Arrow!” session, we need end the pipeline with a call to <code>collect()</code>. However I’ve had to modify it in a couple of other ways too:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) <span class="sc">|&gt;</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+<p>These changes aren’t arbitrary. Translations are never perfect, and you can see hints of that in this example. The exercises below explore this!</p>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Exercises
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Problems</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Solution 1</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Solution 2</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false">Solution 3</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<ol type="1">
+<li><p>Notice that there are two separate calls to <code>mutate()</code>: the first one creates the <code>abbr_zone</code> column from the <code>zone</code> column, and the second one creates the <code>abbr_zone_len</code> column from the newly-added <code>abbr_zone</code> column. Natively, it would be possible to collapse these into a single <code>mutate()</code>. What happens when you try that here?</p></li>
+<li><p>The <strong>arrow</strong> back end understands many R expressions that are not part of <strong>dplyr</strong>. A lot of those are base R expressions (e.g., trigonometric functions, arithmetic operations, etc) but it also includes many commonly used functions from other packages like <strong>stringr</strong> and <strong>lubridate</strong>. This example used <code>str_replace_all()</code> from the <strong>stringr</strong> package, but if you look closely at the code you might wonder why I didn’t use <code>str_remove_all()</code> instead. Try it and find out why.</p></li>
+<li><p>In the main example I read the data into R before moving it to Arrow. The <code>read_csv_arrow()</code> function allows you to read the data directly from a CSV file to an Arrow table, by setting <code>as_data_frame = FALSE</code>. See if you can recreate the entire pipeline without ever loading the data into an R data frame. Hint: you may need to use <code>dplyr::rename()</code> instead of <code>janitor::clean_names()</code>.</p></li>
+</ol>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>),</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) <span class="sc">|&gt;</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[aeiou' ]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_remove_all</span>(<span class="st">"/.*"</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) <span class="sc">|&gt;</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Expression str_remove_all(str_remove_all(zone, "[aeiou' ]"), "/.*") not
+supported in Arrow; pulling data into R</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv_arrow</span>(<span class="at">as_data_frame =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">location_id =</span> LocationID,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">borough =</span> Borough,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">zone =</span> Zone,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_zone =</span> service_zone</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span>  </span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>)</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) <span class="sc">|&gt;</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+<p>Here’s a depiction of where the data goes in this pipeline:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/data-tracking-2.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>The only time that any part of the data set (other than metadata) arrives in R is at the very end, where the final result (containing only 265 rows and 3 columns) is pulled into R using <code>collect()</code>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Handling unknown expressions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The exercises in the previous section show cases when <strong>arrow</strong> encounters an R expression that it doesn’t know how to translate for the Arrow C++ compute engine to handle. When this occurs, one of two things will happen. If the input object was an in-memory Arrow Table (e.g., <code>nyc_taxi_zones_arrow</code>), it throws a warning, pulls the data back into R, and attempts to complete execution. However, if the input object is an on-disk/load-as-needed Arrow Dataset (e.g., <code>nyc_taxi</code>), the behaviour is more conservative: <strong>arrow</strong> immediately throws an error.</p>
+</div>
+</div>
+</section>
+<section id="example-4-datetime-support" class="level3">
+<h3 class="anchored" data-anchor-id="example-4-datetime-support">Example 4: Date/time support</h3>
+<p>The previous example helps give you a sense of where things stand with string manipulation in <strong>arrow</strong>: most core operations are supported, but you’ll find cases where some of the convenience functions are missing.</p>
+<p>The current situation (in Arrow 8.0.0) with date/time operations is a little more patchy. Arrow comes with a variety of data types that are well suited to representing dates and times, but the compute engine doesn’t support the full scope of what you can do with a package like <strong>lubridate</strong>. For example, extractor functions such as <code>year()</code>, <code>month()</code>, <code>day()</code>, and <code>wday()</code> are all available:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    year <span class="sc">==</span> <span class="dv">2022</span>, </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    month <span class="sc">==</span> <span class="dv">1</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">day =</span> <span class="fu">day</span>(pickup_datetime),</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">weekday =</span> <span class="fu">wday</span>(pickup_datetime, <span class="at">label =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">hour =</span> <span class="fu">hour</span>(pickup_datetime),</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">minute =</span> <span class="fu">minute</span>(pickup_datetime),</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">second =</span> <span class="fu">second</span>(pickup_datetime)</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    hour <span class="sc">==</span> <span class="dv">3</span>,</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    minute <span class="sc">==</span> <span class="dv">14</span>,</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>    second <span class="sc">==</span> <span class="dv">15</span></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    pickup_datetime, year, month, day, weekday</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 5
+  pickup_datetime      year month   day weekday
+  &lt;dttm&gt;              &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;  
+1 2022-01-01 14:14:15  2022     1     1 Sat    
+2 2022-01-01 14:14:15  2022     1     1 Sat    
+3 2022-01-01 14:14:15  2022     1     1 Sat    
+4 2022-01-09 14:14:15  2022     1     9 Sun    
+5 2022-01-18 14:14:15  2022     1    18 Tue    </code></pre>
+</div>
+</div>
+<p>Notice the output here is tricky with regard to the hours. The data are in <code>nyc_taxi</code> are stored in UTC, and <code>hours()</code> extracts the hours component of that UTC time. However, I am currently in Sydney. My local time is set to UTC+11, and the <em>print method for the collected R object</em> shows the output in my local time. This is not ideal, but it’s not a failure of <strong>arrow</strong> per se, just a really annoying mismatch of conventions.</p>
+<p>I’m loathe to say much more about date/time support in <strong>arrow</strong> because this is a rapidly moving target. For example, right now <strong>arrow</strong> does not understand the temporal rounding functions <code>round_date()</code>, <code>floor_date()</code>, and <code>ceil_date()</code>, but the sole reason for that is – literally – that I am writing this workshop rather than finishing the pull request that will add this functionality!</p>
+</section>
+</section>
+<section id="two-table-computations" class="level2">
+<h2 class="anchored" data-anchor-id="two-table-computations">Two-table computations</h2>
+<section id="example-5-basic-joins" class="level3">
+<h3 class="anchored" data-anchor-id="example-5-basic-joins">Example 5: Basic joins</h3>
+<p>I’ll use the <code>penguins</code> data from the <a href="https://allisonhorst.github.io/palmerpenguins/"><strong>palmerpenguins</strong> package</a> for this example. You don’t actually need to know anything about the data set but in case you don’t know it or need a reminder, here it is:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>penguins</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt;
+ 1 Adelie  Torgersen           39.1          18.7               181        3750
+ 2 Adelie  Torgersen           39.5          17.4               186        3800
+ 3 Adelie  Torgersen           40.3          18                 195        3250
+ 4 Adelie  Torgersen           NA            NA                  NA          NA
+ 5 Adelie  Torgersen           36.7          19.3               193        3450
+ 6 Adelie  Torgersen           39.3          20.6               190        3650
+ 7 Adelie  Torgersen           38.9          17.8               181        3625
+ 8 Adelie  Torgersen           39.2          19.6               195        4675
+ 9 Adelie  Torgersen           34.1          18.1               193        3475
+10 Adelie  Torgersen           42            20.2               190        4250
+# … with 334 more rows, and 2 more variables: sex &lt;fct&gt;, year &lt;int&gt;</code></pre>
+</div>
+</div>
+<p>The <code>penguins</code> data set tells you the name of the island but doesn’t include any spatial information about where these islands are. So we could imagine having a small lookup table called <code>location</code> that contains an approximate longitude and latitude for each island (we’re being lazy and representing each island as an idealized point!)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>location <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">island =</span> <span class="fu">c</span>(<span class="st">"Torgersen"</span>, <span class="st">"Biscoe"</span>, <span class="st">"Dream"</span>), </span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">lon =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.77</span>, <span class="sc">-</span><span class="fl">65.43</span>, <span class="sc">-</span><span class="fl">64.73</span>),</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.08</span>, <span class="sc">-</span><span class="fl">65.50</span>, <span class="sc">-</span><span class="fl">64.23</span>)</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>)  </span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>location</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table
+3 rows x 3 columns
+$island &lt;string&gt;
+$lon &lt;double&gt;
+$lat &lt;double&gt;</code></pre>
+</div>
+</div>
+<p>I’ve used <code>arrow_table()</code> to create this lookup table directly in Arrow because in a moment I’m going to want to send the <code>penguins</code> data over to Arrow also, and then left join the <code>location</code> table onto the <code>penguins</code> table so that we now have columns for <code>lon</code> and <code>lat</code>. I imagine everyone taking this workshop is familiar with data base joins and with the <strong>dplyr</strong> syntax for performing them, but let’s make this super easy and include a pretty picture illustrating what <code>left_join()</code> is going to do for us:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/left-join-penguin.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Of course the real <code>penguins</code> data frame has more rows and columns than the ones shown, but that’s not really the point!</p>
+<p>So let’s do this. Our initial <strong>dplyr</strong> pipe looks like this: we convert <code>penguins</code> to an Arrow Table using the very evocatively named <code>arrow_table()</code> function, and then <code>left_join()</code> that table with the <code>location</code> table (which is already in Arrow):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(location)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table (query)
+species: dictionary&lt;values=string, indices=int8&gt;
+island: dictionary&lt;values=string, indices=int8&gt;
+bill_length_mm: double
+bill_depth_mm: double
+flipper_length_mm: int32
+body_mass_g: int32
+sex: dictionary&lt;values=string, indices=int8&gt;
+year: int32
+lon: double
+lat: double
+
+See $.data for the source Arrow object</code></pre>
+</div>
+</div>
+<p>The result is an unevaluated query. If we want to execute this and then pull the results back into R we need to call <code>collect()</code> at the end of the pipeline. So we’ll do that, after using <code>select()</code> so that the columns returned just so happen to be the same ones shown in the pretty picture above:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(location) <span class="sc">|&gt;</span> </span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(species, island, bill_length_mm, lon, lat) <span class="sc">|&gt;</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 5
+   species island    bill_length_mm   lon   lat
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1 Adelie  Torgersen           39.1 -64.8 -64.1
+ 2 Adelie  Torgersen           39.5 -64.8 -64.1
+ 3 Adelie  Torgersen           40.3 -64.8 -64.1
+ 4 Adelie  Torgersen           NA   -64.8 -64.1
+ 5 Adelie  Torgersen           36.7 -64.8 -64.1
+ 6 Adelie  Torgersen           39.3 -64.8 -64.1
+ 7 Adelie  Torgersen           38.9 -64.8 -64.1
+ 8 Adelie  Torgersen           39.2 -64.8 -64.1
+ 9 Adelie  Torgersen           34.1 -64.8 -64.1
+10 Adelie  Torgersen           42   -64.8 -64.1
+# … with 334 more rows</code></pre>
+</div>
+</div>
+<p>The example is very simple and only considers one type of join, but the point is simply to illustrate that joins are supported and the syntax is more or less what you’d expect.</p>
+</section>
+<section id="example-6-traps-for-the-unwary" class="level3">
+<h3 class="anchored" data-anchor-id="example-6-traps-for-the-unwary">Example 6: Traps for the unwary</h3>
+<p>Now let’s do something more a little more realistic using the <code>nyc_taxi</code> data, but in doing so we’re going to need to be very careful.</p>
+<p>Let’s imagine that our task is to analyze the taxi data as a function of the pickup and dropoff boroughs. To start with we’ll keep things simple: we’ll ignore the dropoff location and focus only on the pickups. All we want to do is add a column to the <code>nyc_taxi</code> dataset named <code>pickup_borough</code>. We’ll go through this slowly. First, let’s create a version of the taxi zones data that contains appropriately named variables:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>pickup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 2
+   pickup_location_id pickup_borough
+                &lt;int&gt; &lt;chr&gt;         
+ 1                  1 EWR           
+ 2                  2 Queens        
+ 3                  3 Bronx         
+ 4                  4 Manhattan     
+ 5                  5 Staten Island 
+ 6                  6 Staten Island 
+ 7                  7 Queens        
+ 8                  8 Queens        
+ 9                  9 Queens        
+10                 10 Queens        
+# … with 255 more rows</code></pre>
+</div>
+</div>
+<p>Okay, so now we have (what appears to be) the perfect table to left join on. The <code>nyc_taxi</code> and <code>pickup</code> tables both have an integer-valued <code>pickup_location_id</code> column that we can use as the join key, and the <code>pickup_borough</code> column is named appropriately for insertion into <code>nyc_taxi</code>. Because the <code>left_join()</code> function in <strong>dplyr</strong> will automatically join on columns with the same name, the join command looks like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(pickup)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>On the surface this query looks like it should work: we know that it’s well-formed <strong>dplyr</strong> code, and we know from the previous example that <strong>arrow</strong> supports database joins, so it should work, right? What we’re expecting to see is a left join exactly analogous to our penguins example:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/left-join-taxi.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Instead we get an error!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `collect()`:
+! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32</code></pre>
+</div>
+</div>
+<p>If we dig into this error message it’s telling us that we’ve encountered a type mismatch. The <code>nyc_taxi</code> and <code>pickup</code> tables both contain a column named <code>pickup_location_id</code>, and so the <code>left_join()</code> function has attempted to join on that column. However, the two columns don’t store the same kind of data, so Arrow throws an error message. That might seem a little odd because they’re both storing integer values, and that’s the same type of data right?</p>
+<p>Not necessarily. You’re probably going to encounter this in the wild so let’s unpack it now.</p>
+</section>
+<section id="schemas-and-data-types" class="level3">
+<h3 class="anchored" data-anchor-id="schemas-and-data-types">Schemas and data types</h3>
+<p>Arrow is quite picky about data types. In our previous example, both tables store the <code>pickup_location_id</code> variable as an integer, but they haven’t stored it as the same <em>kind</em> of integer: in the <code>nyc_taxi</code> data it’s encoded as a 64-bit integer, but in the <code>pickup</code> table it’s encoded as a 32-bit integer. Arrow won’t treat these as equivalent, so whenever you’re joining tables you need to pay close attention to data types. Later on in the workshop I’ll talk more about the various data types that exist in Arrow and R and how they’re translated, but for now it’s sufficient to recognise that a 32-bit integer is not the same thing as a 64-bit integer.</p>
+<p>So how do we diagnose this issue, and how do we fix it?</p>
+<p>Back at the start of the workshop when we first opened the dataset, we saw some output listing all the variables contained in the data and their types. The formal name for this in Arrow is the <em>schema</em> of the data set, and we can check the schema explicitly like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+vendor_name: string
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+trip_distance: double
+pickup_longitude: double
+pickup_latitude: double
+rate_code: string
+store_and_fwd: string
+dropoff_longitude: double
+dropoff_latitude: double
+payment_type: string
+fare_amount: double
+extra: double
+mta_tax: double
+tip_amount: double
+tolls_amount: double
+total_amount: double
+improvement_surcharge: double
+congestion_surcharge: double
+pickup_location_id: int64
+dropoff_location_id: int64
+year: int32
+month: int32</code></pre>
+</div>
+</div>
+<p>Near the bottom of that list you can see that the entry for <code>pickup_location_id</code> is int64.</p>
+<p>Okay, now think about what happens when we try to join on the <code>pickup</code> data. The <code>pickup</code> data is currently an R data frame but when the join takes place it gets implicitly converted to an Arrow table, and this implicit conversion relies on some default assumptions about what kind of data types should be created in Arrow. So let’s have a look at the schema for the object that gets created:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arrow_table</span>(pickup)<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+pickup_location_id: int32
+pickup_borough: string</code></pre>
+</div>
+</div>
+<p>There’s our type mismatch. In the schema for this table, <code>pickup_location_id</code> is int32.</p>
+<p>So how do we fix it? There are several ways you can do this, but the simplest is probably to explicitly define the schema for the auxiliary table. Let’s move the <code>nyc_taxi_zones</code> data from R to Arrow using the <code>as_arrow_table()</code> command:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_arrow_table</span>(</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">location_id =</span> <span class="fu">int64</span>(),</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">borough =</span> <span class="fu">utf8</span>(), </span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">zone =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+location_id: int64
+borough: string
+zone: string
+service_zone: string</code></pre>
+</div>
+</div>
+<p>Now that the <code>location_id</code> column in <code>nyc_taxi_zones</code> is an Arrow int64 type, our subsequent operations in defining a <code>pickup</code> table (as well as the <code>dropoff</code> table that I’m about to use) will inherit this property. The type mismatch problem will go way and we can now write a join that will “just work”.</p>
+</section>
+<section id="example-6-revisited-fixing-the-join" class="level3">
+<h3 class="anchored" data-anchor-id="example-6-revisited-fixing-the-join">Example 6 revisited: Fixing the join</h3>
+<p>Once we have a properly formatted auxiliary table, our task becomes much simpler. Let’s join twice, once to insert a <code>pickup_borough</code> column into the NYC Taxi data, and a second time to insert a <code>dropoff_borough</code> into the data. Once this is done we can compute cross-tabulations: for every combination of pickup and dropoff borough, how many rides are there that start and end in the respective regions of the city?</p>
+<div class="cell" data-hash="data-wrangling_cache/html/execute-query_7057c98b7761373598205772dcd747e0">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>dropoff <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">dropoff_location_id =</span> location_id, </span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">dropoff_borough =</span> borough</span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a>borough_counts <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb54-16"><a href="#cb54-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(dropoff) <span class="sc">|&gt;</span></span>
+<span id="cb54-17"><a href="#cb54-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(pickup_borough, dropoff_borough) <span class="sc">|&gt;</span></span>
+<span id="cb54-18"><a href="#cb54-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb54-19"><a href="#cb54-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb54-20"><a href="#cb54-20" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>525.445 sec elapsed</code></pre>
+</div>
+</div>
+<p>Be warned! Although the code is clean and it all works nicely, this query does take a little while to complete. Still, when you consider the fact that a humble 2022 Dell XPS13 laptop just joined twice onto a 1.7 billion row table and cross-tabulated by the newly-inserted columns, that’s not too shabby. Anyway, here’s the results:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>borough_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 50 × 3
+   pickup_borough dropoff_borough          n
+   &lt;chr&gt;          &lt;chr&gt;                &lt;int&gt;
+ 1 &lt;NA&gt;           &lt;NA&gt;            1249152360
+ 2 Manhattan      Manhattan        355850092
+ 3 Queens         Manhattan         14648891
+ 4 Manhattan      Queens            13186443
+ 5 Manhattan      Brooklyn          11294128
+ 6 Queens         Queens             7537042
+ 7 Unknown        Unknown            4519763
+ 8 Queens         Brooklyn           3727686
+ 9 Brooklyn       Brooklyn           3566671
+10 Manhattan      Bronx              2091627
+# … with 40 more rows</code></pre>
+</div>
+</div>
+<!-- - the two-table database joins: `left_join()`, `inner_join()`, `full_join()`, etc -->
+<!-- - various helper functions and other assorted conveniences: `n()`, `count()` -->
+<!-- After a little thought you would also realise that the **arrow** package must also be providing support for a lot of other low level features: -->
+<!-- - Arithmetic and logical operations  -->
+<!-- - Mathematical computations: `sin()`, `log()`, `exp()`, etc -->
+<!-- - Methods for `$`, `[[`, `[`, to allow Tables to behave like data frames -->
+<!-- Exploring further you might discover that **arrow** also has support for regular expressions and temporal arithmetic, and as a consequence there is partial coverage of **stringr** and **lubridate** functionality too. You can use `str_match()` as part of an "arrowplyr" pipeline, and everything will work fine! -->
+<!-- However you'll also notice that coverage of **dplyr** is not 100% either. For example, as of **arrow** 8.0.0, there is no support for the `row_number()` convenience function. That's not a big deal, because it's easy to use `1:n()` instead. In other cases, the limitations are a bit more substantial: for example, **arrow** does not support using  `across()` or even the older scoped functions like `mutate_at()`. -->
+<!-- This might lead you to wonder... exactly what does **arrow** support? What doesn't it support? Is there a comprehensive list somewhere that you can check?  -->
+<!-- They're good questions, but they don't have entirely satisfying answers. The capabilities of the Arrow C++ library that supplies the compute engine are growing very quickly, and as a consequence the scope of what the **arrow** R package can support is growing quickly too. That means it's a bit of a moving target! As time goes by we're going to be adding more functionality _and_ putting together more instructional material documenting use cases and showing off the things you can do with the package -->
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Exercises
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Problems</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Solution 1</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<ol type="1">
+<li>How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)?</li>
+</ol>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="cell" data-hash="data-wrangling_cache/html/airport-pickup_229e2c7b25a7d8e08d6308fab10e1ad7">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>pickup_location <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">pickup_zone =</span> zone</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2019</span>) <span class="sc">|&gt;</span></span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(pickup_location) <span class="sc">|&gt;</span></span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(pickup_zone, <span class="st">"Airport"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(pickup_zone) <span class="sc">|&gt;</span></span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  pickup_zone             n
+  &lt;chr&gt;               &lt;int&gt;
+1 LaGuardia Airport 2159224
+2 JFK Airport       2729336
+3 Newark Airport       8643</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>17.117 sec elapsed</code></pre>
+</div>
+</div>
+<p>The result here seemed slightly surprising to me initially (not being from the US, much less New York), but it makes a little more when you look at the geography: Newark airport is in New Jersey, and not strictly speaking a part of New York City. This has an impact on how the zones are categorized, what fees are charged, and (I presume) on whether the taxis that service the airport tend to be captured by the NYC TLC data. It’s not very relevant to our goals in this workshop but of course would be important in a real world data analysis :)</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="combining-arrow-with-duckdb" class="level2">
+<h2 class="anchored" data-anchor-id="combining-arrow-with-duckdb">Combining <strong>arrow</strong> with <strong>duckdb</strong></h2>
+<p>At the start of the workshop we emphasized the point that Arrow aims to be a multi-language toolbox that makes it easier to connect analytics applications. Here’s an example: DuckDB.</p>
+<p>If you’re not familiar with it, <a href="https://duckdb.org/">DuckDB</a> is a lightweight database system designed specifically for analytics. It’s serverless, has no external dependencies, and if you want to use it with R all you have to do is install the <strong>duckdb</strong> package with <code>install.packages("duckdb")</code>. Think of it as like SQLite, with a major exception: it’s intended to support analytics workflows (fewer queries, but computationally expensive ones) rather than transactional ones (many queries that touch only a small part of the database). For the kind of workflows a data scientist tends to engage in, it’s usually much faster than SQLite. Plus, it comes with Arrow support, and consequently the <strong>arrow</strong> and <strong>duckdb</strong> packages play very nicely together.</p>
+<p>Here’s how it works: First, notice DuckDB is an SQL database, and you can interact with it from R using <strong>dbplyr</strong>. Second, notice that DuckDB understands Arrow formats, so we can pass control of a dataset from the Arrow C++ library to DuckDB simply by passing pointers: there’s no copying involved. These two things together are what allow the <strong>arrow</strong> package to supply two very handy functions, <code>to_duckdb()</code> and <code>to_arrow()</code>. What these do, in effect, is allow you to switch out one engine for the other in the middle of a data analysis pipeline at almost zero cost!</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/dplyr-arrow-duckdb.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>This can be remarkably powerful. There are some operations that are supported by DuckDB but not currently available in the Arrow compute engine, and vice versa. So it’s easy just flip back and forth between them whenever you need to.</p>
+<p>(As an aside, if you’re like me this feels… wrong. Under normal circumstances you’d think it’s absurdly wasteful to completely swap out the back end engine just to get access to a couple of handy functions, but that’s because we’re all so used to a mental model in which serialization costs are pervasive. We’ve all internalized the idea that switching costs are really, really big. But in this case all we’re really doing is passing a little bit of metadata between two processes that both understand Arrow and <strong>dplyr</strong> so it’s really not a big deal)</p>
+<section id="example-7-window-functions" class="level3">
+<h3 class="anchored" data-anchor-id="example-7-window-functions">Example 7: Window functions</h3>
+<p>Okay let’s start with a simple example that intuitively you’d think should work, and I’ll use the <code>penguins</code> data from the <strong>palmerpenguins</strong> package again. I’m going to add a column specifying the row number, filter out some observations, and select a few columns. Nothing fancy, and if I do it natively in R, everything works fine:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 11 × 4
+      id sex   species island   
+   &lt;int&gt; &lt;fct&gt; &lt;fct&gt;   &lt;fct&gt;    
+ 1     4 &lt;NA&gt;  Adelie  Torgersen
+ 2     9 &lt;NA&gt;  Adelie  Torgersen
+ 3    10 &lt;NA&gt;  Adelie  Torgersen
+ 4    11 &lt;NA&gt;  Adelie  Torgersen
+ 5    12 &lt;NA&gt;  Adelie  Torgersen
+ 6    48 &lt;NA&gt;  Adelie  Dream    
+ 7   179 &lt;NA&gt;  Gentoo  Biscoe   
+ 8   219 &lt;NA&gt;  Gentoo  Biscoe   
+ 9   257 &lt;NA&gt;  Gentoo  Biscoe   
+10   269 &lt;NA&gt;  Gentoo  Biscoe   
+11   272 &lt;NA&gt;  Gentoo  Biscoe   </code></pre>
+</div>
+</div>
+<p>Okay let’s imagine I’m doing all this in Arrow. I’ll add an <code>arrow_table()</code> step at the top of the pipeline so that all the subsequent steps are being done using an Arrow table not an R data frame, and…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span> <span class="co"># oh no!</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Expression row_number() not supported in Arrow; pulling data into R</code></pre>
+</div>
+</div>
+<p>…it doesn’t work. The <code>row_number()</code> function is not currently understood by the Arrow back end. In fact, this is a special case of a general issue: engine supplied by the Arrow C++ library doesn’t currently support window functions, and as a consequence the <strong>arrow</strong> R package can’t do much to help. However, the DuckDB engine does support window functions, so all we have to do is pass control over <code>to_duckdb()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># Source:   lazy query [?? x 4]
+# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
+      id sex   species island   
+   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;    
+ 1     4 &lt;NA&gt;  Adelie  Torgersen
+ 2     9 &lt;NA&gt;  Adelie  Torgersen
+ 3    10 &lt;NA&gt;  Adelie  Torgersen
+ 4    11 &lt;NA&gt;  Adelie  Torgersen
+ 5    12 &lt;NA&gt;  Adelie  Torgersen
+ 6    48 &lt;NA&gt;  Adelie  Dream    
+ 7   179 &lt;NA&gt;  Gentoo  Biscoe   
+ 8   219 &lt;NA&gt;  Gentoo  Biscoe   
+ 9   257 &lt;NA&gt;  Gentoo  Biscoe   
+10   269 &lt;NA&gt;  Gentoo  Biscoe   
+# … with more rows</code></pre>
+</div>
+</div>
+<p>It all works now.</p>
+</section>
+<section id="example-8-something-bigger" class="level3">
+<h3 class="anchored" data-anchor-id="example-8-something-bigger">Example 8: Something bigger!</h3>
+<p>The example you’ve just seen highlights the basic idea but it’s tiny: a 344 row data set doesn’t really need Arrow at all. So let’s scale this up a little! Let’s suppose I’m working with the NYC taxi data for January 2022 and I’ve opened it as an Arrow dataset:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_jan <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/year=2022/month=1/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>It’s small relative to the full taxi data, but it’s still two and a half million rows. Large enough that to potentially cause headaches if we aren’t cautious:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_jan<span class="sc">$</span>num_rows </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2463879</code></pre>
+</div>
+</div>
+<p>Now let’s give ourselves a slightly weird “numerological” task: we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, <em>and</em> the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a “magic number” that removes all the digits from the rank that are not 5 or 9. This would be a little tricky with <strong>arrow</strong> and <strong>dplyr</strong> alone, but not too difficult with <strong>duckdb</strong> and <strong>dbplyr</strong>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>numerology <span class="ot">&lt;-</span> nyc_taxi_jan <span class="sc">|&gt;</span></span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span>  </span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">window_order</span>(pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">trip_id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb71-7"><a href="#cb71-7" aria-hidden="true" tabindex="-1"></a>    trip_id <span class="sc">|&gt;</span> <span class="fu">as.character</span>() <span class="sc">|&gt;</span> <span class="fu">str_detect</span>(<span class="st">"59"</span>),</span>
+<span id="cb71-8"><a href="#cb71-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">second</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span>,</span>
+<span id="cb71-9"><a href="#cb71-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">minute</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span></span>
+<span id="cb71-10"><a href="#cb71-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb71-11"><a href="#cb71-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb71-12"><a href="#cb71-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">magic_number =</span> trip_id <span class="sc">|&gt;</span> </span>
+<span id="cb71-13"><a href="#cb71-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.character</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb71-14"><a href="#cb71-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[^59]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb71-15"><a href="#cb71-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.integer</span>()</span>
+<span id="cb71-16"><a href="#cb71-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb71-17"><a href="#cb71-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(trip_id, magic_number, pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb71-18"><a href="#cb71-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb71-19"><a href="#cb71-19" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.753 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>numerology</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 37 × 3
+   trip_id magic_number pickup_datetime    
+     &lt;dbl&gt;        &lt;int&gt; &lt;dttm&gt;             
+ 1   13159           59 2022-01-01 02:59:59
+ 2   39159          959 2022-01-01 15:59:59
+ 3   65940           59 2022-01-02 01:59:59
+ 4  159315          595 2022-01-03 14:59:59
+ 5  405954          595 2022-01-06 18:59:59
+ 6  405955         5955 2022-01-06 18:59:59
+ 7  487592           59 2022-01-07 21:59:59
+ 8  590708           59 2022-01-09 07:59:59
+ 9  590709          599 2022-01-09 07:59:59
+10  590710           59 2022-01-09 07:59:59
+# … with 27 more rows</code></pre>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Resources on Arrow/DuckDB integration
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you’re interested in following up on this topic, a good place to start is with the <a href="https://jthomasmock.github.io/bigger-data/">Bigger data with arrow and duckdb</a> slides prepared by Thomas Mock and Edgar Ruiz</p>
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

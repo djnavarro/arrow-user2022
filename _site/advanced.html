@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.282">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Apache Arrow in R - Part 4: Advanced Arrow</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apache Arrow in R</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html">Home</a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false">Tutorial</a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+        <li>
+    <a class="dropdown-item" href="./packages-and-data.html">
+ <span class="dropdown-text">0: Packages and Data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./hello-arrow.html">
+ <span class="dropdown-text">1: Hello Arrow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-wrangling.html">
+ <span class="dropdown-text">2: Data Wrangling</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-storage.html">
+ <span class="dropdown-text">3: Data Storage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./advanced.html">
+ <span class="dropdown-text">4: Advanced Arrow</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#how-do-we-organize-in-memory-tables" id="toc-how-do-we-organize-in-memory-tables" class="nav-link active" data-scroll-target="#how-do-we-organize-in-memory-tables">How do we organize in-memory tables?</a>
+  <ul class="collapse">
+  <li><a href="#on-record-batches" id="toc-on-record-batches" class="nav-link" data-scroll-target="#on-record-batches">On record batches</a></li>
+  </ul></li>
+  <li><a href="#how-are-scalar-types-mapped" id="toc-how-are-scalar-types-mapped" class="nav-link" data-scroll-target="#how-are-scalar-types-mapped">How are scalar types mapped?</a></li>
+  <li><a href="#the-big-picture" id="toc-the-big-picture" class="nav-link" data-scroll-target="#the-big-picture">The big picture</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Part 4: Advanced Arrow</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<p>It is traditional in any technical workshop that by the time you get to the end, two things are happening: the content is moving toward the most complicated material, and the participants are moving toward a state of exhaustion. This collision is… well, it’s a problem. Nobody involved in the workshop – neither the instructors not the participants – really wants to ramp up the technical difficulty or be forced to think too hard. We’re all tired. Which is a little awkward, because the only things left to cover are complicated topics that build on the material from earlier in the workshop. Not only that, every workshop since the dawn of time runs over the time allocated, so we don’t have much time left to cover these topics. It’s a pedagogical knot.</p>
+<p>Here’s how we’re going to untie that knot in this workshop. The final session really is going to talk about advanced topics, but it isn’t going to dive very deep into them, and it’s not going to involve any hands-on exercises. Instead, we’re going to talk about concepts, show some pretty pictures, and point you in the direction of handy resources.</p>
+<section id="how-do-we-organize-in-memory-tables" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-we-organize-in-memory-tables">How do we organize in-memory tables?</h2>
+<p>Now that we’re getting to the end and have a sense of <em>why</em> we’re using Arrow and <em>how</em> we use it, it’s not a bad idea to spend a little time thinking about <em>what</em> in-memory data structures are used by Arrow. How are they organized, and how do they compare to the corresponding structures used by R?</p>
+<p>In terms of the diagram we’ve been using to structure our view of the <strong>arrow</strong> package, we’re in the bottom left corner: the focus is on Arrow Tables, R data frames, and all the constituent data structures that comprise these objects.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/arrow-in-memory-objects.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Let’s start by thinking about how it works in R. When we work with tabular data structures in R, we’re almost always using a data frame (or a tibble, which is essentially the same thing) and – as you’re probably well aware given that you’re taking this workshop – a data frame is basically a list of vectors representing columns. In other words, data frames are arranged column-wise in memory. The diagram below shows the data structures involved:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-structures-r.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Notice that we have only two “tiers” here, vectors and data frames. R doesn’t have any special concept of a “scalar” value: scalars are merely vectors of length 1.</p>
+<p>Arrow is a little more complicated. The in-memory tabular data structure you’re most likely to encounter when working with the <strong>arrow</strong> package is an Arrow Table and as shown below, there are four “tiers”:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-structures-arrow-1.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Let’s unpack these four tiers in a little more detail. At the lowest level we have the concept of a <em>scalar</em>. A scalar object is simply a single value, that can be of any type. It might be an integer, a string, a timestamp, or any of the different data types that Arrow supports (more on that later). For the current purposes, what matters is that a scalar is one value and is considered to be “zero dimensional”. We rarely have a reason to create an Arrow Scalar from R, but for the record, if you ever want to do so you can do this by calling the <code>Scalar$create()</code> function provided by the <strong>arrow</strong> package:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Scalar<span class="sc">$</span><span class="fu">create</span>(<span class="st">"New York"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Scalar
+New York</code></pre>
+</div>
+</div>
+<p>The next level up the hierarchy is the <em>array</em>, a fundamental data structure in Arrow. An array is a data structure that stores one or more scalar values, and you probably won’t be surprised to hear that you can create one by calling <code>Array$create()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>city <span class="ot">&lt;-</span> Array<span class="sc">$</span><span class="fu">create</span>(<span class="fu">c</span>(<span class="st">"New York"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"Philadelphia"</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Array
+&lt;string&gt;
+[
+  "New York",
+  null,
+  null,
+  "Philadelphia"
+]</code></pre>
+</div>
+</div>
+<p>An array is a one dimensional stucture, and you can extract subsets by using square brackets:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>city[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Array
+&lt;string&gt;
+[
+  "New York",
+  null
+]</code></pre>
+</div>
+</div>
+<p>So far this all feels very R like: arrays in Arrow feel very similar to vectors in R at first. However, when we start looking more closely we start seeing differences. An R vector is designed to be an extensible, mutable object. A core design decision in Arrow was to make arrays immutable for performance reasons: under the hood an Arrow array is comprised of a fixed set of <em>buffers</em> – contiguous blocks of memory dedicated to that array – along with some <em>metadata</em>. For example, the <code>city</code> array we just created can be unpacked like this:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/array-in-memory.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>The details of this don’t matter too much for this workshop, but we’ll do a lightning tour anyway! The most important things here are the three buffers: the first buffer is a block of memory whose bits indicate which elements (or <em>slots</em>, to use Arrow terminology) of the array valid values and which are null. This buffer is the “validity bitmap”. The second buffer stores numeric values and is referred to as the “offset buffer”: it tells you where to look in the third buffer to find the relevant values to fill each of the scalar strings. This makes most sense when we look at the third “data buffer” which is just one long (utf8-encoded) string containing all the text stored in the array. If we want to extract the text contained in a particular slot in the array we consult the equivalent slot in the offset buffer, which tells us where to start reading text from in the data buffer.</p>
+<p>In practice, an R user doesn’t need to care about these implementation details, but it’s helpful to understand that these data structures are all design choices that Arrow makes for performance reasons. Making arrays immutable and laying arrays out like this allows Arrow to make extremely efficient use of memory and CPU resources. Unfortunately, this design choice also creates one massive practical problem for data analysts: in real life, data sets change. New data arrive over time, for example. If I cannot add new observations to an array, how can I use an array as the data structure to represent a variable?</p>
+<p>The solution to the problem is to use <em>chunked arrays</em>. Chunked arrays are a weird kind of fiction intended to bridge the gap between the needs of the data engineer (arrays need to be immutable objects) and the needs of the data analyst (data variables need to be mutable and extensible). The “trick” is quite simple: a chunked array is a list of one or more arrays, coupled with a convenient set of abstractions that allow the user to pretend that these arrays are all laid out as one long vector. This is illustrated schematically below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/chunked-array-in-memory.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>To create the chunked array above, I’d do something like this:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>city <span class="ot">&lt;-</span> ChunkedArray<span class="sc">$</span><span class="fu">create</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Or, alternatively, I could use the convenience function <code>chunked_array()</code> that does exactly the same job:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>city <span class="ot">&lt;-</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ChunkedArray
+[
+  [
+    "New York",
+    "San Francisco",
+    "Los Angeles",
+    "Philadelphia"
+  ],
+  [
+    "Sydney",
+    "Barcelona"
+  ]
+]</code></pre>
+</div>
+</div>
+<p>Now, in “reality”, what I have done here is create two immutable array objects and wrapped those in a flexible container. Each of those arrays is referred to a “chunk”, and the container a list object that defines the chunked array. But let’s be honest: who cares? The whole point of a chunked array is we can ignore this reality and pretend that this is a length-6 vector. I can extract individual elements using a common indexing scheme:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>city[<span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ChunkedArray
+[
+  [
+    "Philadelphia"
+  ],
+  [
+    "Sydney",
+    "Barcelona"
+  ]
+]</code></pre>
+</div>
+</div>
+<p>These results are being pulled from different chunks, but none of that matters at the user level. This abstraction is what allows you to pretend that chunked arrays in Arrow are the same kind of thing as vectors in R.</p>
+<p>At last we reach the top level of the hierarchy. Recall that our lowest level consists of zero-dimensional objects, scalars. The next two levels, arrays and chunked arrays, are both one-dimensional objects (even if it does require a bit of abstraction to make that work for chunked arrays). Once we reach the table level, however, we are talking about two-dimensional structures.</p>
+<p>In the same way that an R data frame is an ordered collection of named vectors, an Arrow table is an ordered collection of named chunked arrays. As you might expect given earlier examples, it’s possible to construct a new table using <code>Table$create()</code>, but this time I’ll just jump straight to using the convenience function, <code>arrow_table()</code>. Let’s recreate the <code>riots</code> table exactly, right down to the (completely pointless!) detail of having the exact same chunking structure. To save you scrolling, here’s the table again:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-structures-arrow-1.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Here’s the command:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>riots <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">location =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"Stonewall Inn"</span>, <span class="st">"Compton's Cafeteria"</span>, <span class="st">"Cooper Do-nuts"</span>, <span class="st">"Dewey's"</span>), </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"King's Cross"</span>, <span class="st">"La Rambla"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  ), </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="dv">1969</span>, <span class="dv">1966</span>, <span class="dv">1959</span>, <span class="dv">1965</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="dv">1978</span>, <span class="dv">1977</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">city =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>riots</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table
+6 rows x 3 columns
+$location &lt;string&gt;
+$year &lt;double&gt;
+$city &lt;string&gt;</code></pre>
+</div>
+</div>
+<p>Admittedly that is a bit of an anti-climax, because the print method for Arrow tables doesn’t give you a pretty preview, but we can always pull an Arrow table into R to see what it looks like as a tibble. If we have <strong>dplyr</strong> loaded we can call <code>collect()</code> to do this, but more generally we can coerce the object using <code>as.data.frame()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.data.frame</span>(riots)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  location             year city         
+  &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;        
+1 Stonewall Inn        1969 New York     
+2 Compton's Cafeteria  1966 San Francisco
+3 Cooper Do-nuts       1959 Los Angeles  
+4 Dewey's              1965 Philadelphia 
+5 King's Cross         1978 Sydney       
+6 La Rambla            1977 Barcelona    </code></pre>
+</div>
+</div>
+<p>That’s definitely the right data, but this is an object in R and it doesn’t have any analog of “chunks”. If you want to check that the chunking in our original <code>riots</code> table is identical to the one depicted in the illustration, what can do is print out one of the columns:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>riots<span class="sc">$</span>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ChunkedArray
+[
+  [
+    "New York",
+    "San Francisco",
+    "Los Angeles",
+    "Philadelphia"
+  ],
+  [
+    "Sydney",
+    "Barcelona"
+  ]
+]</code></pre>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For more information on this topic, see the <a href="https://blog.djnavarro.net/arrays-and-tables-in-arrow/">Arrays and tables in Arrow</a> blog post by Danielle Navarro</p>
+</div>
+</div>
+<section id="on-record-batches" class="level3">
+<h3 class="anchored" data-anchor-id="on-record-batches">On record batches</h3>
+<p>You will also encounter the related concept of a record batch. Record batches are fundamental to the design of Apache Arrow, but we don’t typically work with them during everyday data analysis because Tables provide better high-level abstractions for analysis purposes. Nevertheless it is useful to know what they look like. A record batch is a collection of arrays, in the same way that a table is a collection of chunked arrays. Rendered schematically, a record batch is a two-dimensional data structure that looks like this:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/tabular-structures-arrow-2.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Because it is composed of arrays rather than chunked arrays, a record batch is a lot less flexible than a table, so we don’t really use them much for data analysis. However, they are very important data structures when we’re talking about streaming data from one process to another, so when you start digging into the Arrow documentation you’ll find it talks about them a lot. However, for this workshop we’re more interested in Arrow tables (and datasets), so that’s all we’ll say about them here.</p>
+</section>
+</section>
+<section id="how-are-scalar-types-mapped" class="level2">
+<h2 class="anchored" data-anchor-id="how-are-scalar-types-mapped">How are scalar types mapped?</h2>
+<p>In the last section we saw that there’s a natural(ish) mapping between Arrow Tables and R data frames. They aren’t identical data structures, but it’s conceptually possible to associate one with the other. However, if we want to map from one to another, the mapping needs to decide how to map scalar types from one language to the other. Sometimes this is easy. R has a logical type that can take three values (<code>TRUE</code>, <code>FALSE</code>, <code>NA</code>) and Arrow has an equivalent boolean type that also allows three values (<code>true</code>, <code>false</code>, <code>null</code>). It seems natural to translate R logical vectors to Arrow boolean (chunked) arrays, and vice versa. There are other cases where the data structures are essentially identical: the R integer class and the Arrow int32 type are natural analogs of one another, as are R doubles and Arrow float64 types. These three mappings are shown with bidirectional arrows below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/scalar-numeric-types-1.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>However, as you might have guessed by looking at all that blank space, the story becomes a little more complicated once we look at a wider range of types available for representing logicals, integers, and numeric values in R and Arrow. Here’s what the diagram looks like when we fill in the missing pieces:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/scalar-numeric-types-2.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>The dashed lines linked to the uint32, uint64, and int64 types in Arrow exist because the default mappings in those cases are complicated and depend on user settings and on whether the values contained in the variables are representable using the R integer class.</p>
+<p>A similarly nuanced story exists for other data types. There are default bidirectional mappings between character vectors in R and the utf8 type in Arrow, between POSIXct and timestamp, Date and date32, difftime and duration, and finally between the hms::hms class in R and the time32 type in Arrow, but the full story is a little more complex:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/scalar-other-types.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For more information on this topic, see the <a href="https://blog.djnavarro.net/data-types-in-arrow-and-r/">Data types in Arrow and R</a> blog post by Danielle Navarro</p>
+</div>
+</div>
+</section>
+<section id="the-big-picture" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-big-picture">The big picture</h2>
+<div class="cell page-columns page-full" data-fig.dpi="300" data-hash="advanced_cache/html/airport-pickups_3ee433ce98bb56dedc79dbc24c3f5322">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- the part that really, really needs Arrow ---- </span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv_arrow</span>(</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">as_data_frame =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">skip =</span> <span class="dv">1</span>, </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">LocationID =</span> <span class="fu">int64</span>(),</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">Borough =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">Zone =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">location_id =</span> LocationID,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">borough =</span> Borough,</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">zone =</span> Zone,</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_zone =</span> service_zone</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>airport_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(location_id)</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>dropoff_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">dropoff_location_id =</span> location_id,</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">dropoff_zone =</span> zone</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>airport_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">%in%</span> airport_zones) <span class="sc">|&gt;</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matches</span>(<span class="st">"datetime"</span>),</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matches</span>(<span class="st">"location_id"</span>)</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(dropoff_zones) <span class="sc">|&gt;</span></span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(dropoff_zone) <span class="sc">|&gt;</span></span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- the part that works so perfectly in R ---- </span></span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="st">"data/taxi_zones/taxi_zones.shp"</span> <span class="sc">|&gt;</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_sf</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(airport_pickups,</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"zone"</span> <span class="ot">=</span> <span class="st">"dropoff_zone"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>pic <span class="ot">&lt;-</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">fill =</span> n)) <span class="sc">+</span></span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">size =</span> .<span class="dv">1</span>, <span class="at">color =</span> <span class="st">"#222222"</span>) <span class="sc">+</span></span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(</span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Number of trips"</span>,</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">label_comma</span>(),</span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">palette =</span> <span class="st">"Oranges"</span>,</span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">direction =</span> <span class="dv">1</span></span>
+<span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label_repel</span>(</span>
+<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">stat =</span> <span class="st">"sf_coordinates"</span>,</span>
+<span id="cb18-64"><a href="#cb18-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb18-65"><a href="#cb18-65" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">zone =</span> <span class="fu">case_when</span>(</span>
+<span id="cb18-66"><a href="#cb18-66" aria-hidden="true" tabindex="-1"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>) <span class="sc">~</span> zone,</span>
+<span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Times"</span>) <span class="sc">~</span> zone,</span>
+<span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">""</span>)</span>
+<span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">label =</span> zone, <span class="at">geometry =</span> geometry),</span>
+<span id="cb18-71"><a href="#cb18-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">max.overlaps =</span> <span class="dv">50</span>,</span>
+<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">box.padding =</span> .<span class="dv">5</span>,</span>
+<span id="cb18-73"><a href="#cb18-73" aria-hidden="true" tabindex="-1"></a>    <span class="at">label.padding =</span> .<span class="dv">5</span>,</span>
+<span id="cb18-74"><a href="#cb18-74" aria-hidden="true" tabindex="-1"></a>    <span class="at">label.size =</span> .<span class="dv">15</span>,</span>
+<span id="cb18-75"><a href="#cb18-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">label.r =</span> <span class="dv">0</span>,</span>
+<span id="cb18-76"><a href="#cb18-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">force =</span> <span class="dv">30</span>,</span>
+<span id="cb18-77"><a href="#cb18-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">force_pull =</span> <span class="dv">0</span>,</span>
+<span id="cb18-78"><a href="#cb18-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"white"</span>,</span>
+<span id="cb18-79"><a href="#cb18-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">min.segment.length =</span> <span class="dv">0</span></span>
+<span id="cb18-80"><a href="#cb18-80" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-81"><a href="#cb18-81" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb18-82"><a href="#cb18-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb18-83"><a href="#cb18-83" aria-hidden="true" tabindex="-1"></a>    <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"black"</span>), </span>
+<span id="cb18-84"><a href="#cb18-84" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">colour =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="st">"#839496"</span>),</span>
+<span id="cb18-85"><a href="#cb18-85" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>),</span>
+<span id="cb18-86"><a href="#cb18-86" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>)</span>
+<span id="cb18-87"><a href="#cb18-87" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-88"><a href="#cb18-88" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NULL</span></span>
+<span id="cb18-89"><a href="#cb18-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-90"><a href="#cb18-90" aria-hidden="true" tabindex="-1"></a>pic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display column-screen">
+<p><img src="advanced_files/figure-html/airport-pickups-1.png" class="img-fluid" width="1920"></p>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

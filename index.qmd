@@ -1,0 +1,44 @@
+---
+title: "Larger-Than-Memory Data Workflows with Apache Arrow"
+---
+
+## Workshop Description
+
+As datasets become larger and more complex, the boundaries between data engineering and data science are becoming blurred. Data analysis pipelines with larger-than-memory data are becoming commonplace, creating a gap that needs to be bridged: between engineering tools designed to work with very large datasets on the one hand, and data science tools that provide the analysis capabilities used in data workflows on the other. One way to build this bridge is with [Apache Arrow](https://arrow.apache.org/), a multi-language toolbox for working with larger-than-memory tabular data. Arrow is designed to improve performance and efficiency, and places emphasis on standardization and interoperability among workflow components, programming languages, and systems. The **arrow** package provides a mature R interface to Apache Arrow, making it an appealing solution for data scientists working with large data in R.
+
+::: {.column-margin}
+![](img/arrow-hex-dark.png)
+:::
+
+In this tutorial you will learn how to use the **arrow** R package to create seamless engineering-to-analysis data pipelines. You’ll learn how to use interoperable data file formats like Parquet or Feather for efficient storage and data access. You’ll learn how to exercise fine control over data types to avoid common data pipeline problems. During the tutorial you’ll be processing larger-than-memory files and multi-file datasets with familiar **dplyr** syntax, and working with data in cloud storage. The tutorial doesn’t assume any previous experience with Apache Arrow: instead, it will provide a foundation for using **arrow**, giving you access to a powerful suite of tools for analyzing larger-than-memory datasets in R.
+
+## Instructors 
+
+- [Danielle Navarro](https://djnavarro.net/) - Danielle is a data scientist, professional educator, generative artist, former academic in recovery, open source R developer, and author of multiple books on statistics and data analysis. 
+- [Jonathan Keane](https://jonkeane.com/) - Jonathan is an engineering and data science manager at Voltron Data. They've been passionate about R since undergrad and developed or contributed to a number of open source projects over the years.
+- [Stephanie Hazlitt](https://twitter.com/stephhazlitt) - Stephanie is a data scientist, an avid R user, and an engineering manager at Voltron Data, with a passion for supporting people and teams in learning, creating and sharing data science products and tools.
+
+## Tutorial Content
+
+- [0: Packages and Data](packages-and-data.html). Some instructions on the packages and data sets used in the workshop. It would be handy to read this before the workshop starts!
+- [1: Hello Arrow](hello-arrow.html). The first session of the workshop provides an overview of the Apache Arrow project and gives participants their first hands on experience working with data using Arrow. 
+- [2: Data Wrangling](data-wrangling.html). The second session is a deep dive into the analyzing large data sets using **arrow**, **dplyr**, and to a lesser extent **duckdb**. This is the longest session of the workshop.
+- [3: Data Storage](data-storage.html). The third session looks in detail the read/write capabilities of **arrow**. It discusses the parquet file format, how to use it effectively for large data sets, and how to partition large data sets across many files.
+- [4: Advanced Arrow](advanced.html). The final session is brief, and takes a look under the hood. It talks about the data structures and data types used in Arrow.
+
+## When/Where
+
+```{r}
+workshop_time <- function(tz) {
+  start <- lubridate::ymd_hms("2022-06-20 14:00:00", tz = "America/Chicago")
+  close <- lubridate::ymd_hms("2022-06-20 17:30:00", tz = "America/Chicago")
+  cat("For time zone:", tz, "\n")
+  cat("  start time:", lubridate::with_tz(start, tz) |> as.character(), "\n")
+  cat("  close time:", lubridate::with_tz(close, tz) |> as.character(), "\n")
+}
+
+workshop_time("America/Vancouver")
+workshop_time("America/Chicago")
+workshop_time("Africa/Harare")
+workshop_time("Australia/Sydney")
+```

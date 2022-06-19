@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.282">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Apache Arrow in R - Part 3: Data Storage</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apache Arrow in R</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html">Home</a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false">Tutorial</a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+        <li>
+    <a class="dropdown-item" href="./packages-and-data.html">
+ <span class="dropdown-text">0: Packages and Data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./hello-arrow.html">
+ <span class="dropdown-text">1: Hello Arrow</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-wrangling.html">
+ <span class="dropdown-text">2: Data Wrangling</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./data-storage.html">
+ <span class="dropdown-text">3: Data Storage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./advanced.html">
+ <span class="dropdown-text">4: Advanced Arrow</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#parquet-files" id="toc-parquet-files" class="nav-link active" data-scroll-target="#parquet-files">Parquet files</a></li>
+  <li><a href="#multi-file-data-sets" id="toc-multi-file-data-sets" class="nav-link" data-scroll-target="#multi-file-data-sets">Multi-file data sets</a></li>
+  <li><a href="#an-example" id="toc-an-example" class="nav-link" data-scroll-target="#an-example">An example</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Part 3: Data Storage</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<p>In this session we’ll talk about reading and writing large data sets. There are a few interrelated topics that arise here, so it’s really helpful to understand that – in terms of the read/write capabilities of the <strong>arrow</strong> package – we’re focusing almost entirely on the highlighted path in the diagram below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/arrow-read-write-dataset.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Why this specific pathway?</p>
+<ul>
+<li>Arrow Datasets are the only data object suitable for larger-than-memory data. Arrow Tables and R data frames both attempt to represent the entire data set in-memory, which simply won’t work here</li>
+<li>Apache Parquet is a modern data format optimized to make life easier when you’re working with big data (as opposed to CSV and Feather, which both have their uses but aren’t ideal for this situation)</li>
+<li>Local storage because it’s easier. Let’s not complicate the story by talking about S3 buckets!</li>
+</ul>
+<section id="parquet-files" class="level2">
+<h2 class="anchored" data-anchor-id="parquet-files">Parquet files</h2>
+<p>If you work with large data sets already, you may have encountered parquet files before and none of this will be new material for you. But for folks new to this world it’s not as well known, so we’ll talk a little about the <a href="https://parquet.apache.org/">Apache Parquet project</a>. Although they are both associated with the Apache Software Foundation, and the <strong>arrow</strong> package is (as far as we know!) the easiest way to work with parquet files, Apache Parquet is an entirely different project to Apache Arrow.</p>
+<p>Parquet files structure a tabular data set in a format that is “row-chunked, column-arranged, and paged”. Here’s what we mean by that. First, we take a table and partition it row-wise into a set of distinct “chunks”, as shown below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/parquet-chunking.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Then, for every chunk and for every column in each chunk, that column is split into a collection of “pages”:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/parquet-paging.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>When the table is written to disk, we start writing from chunk 1, column 1, writing each page in order. We then repeat this for every column in this chunk; and then move to the next chunk. This continues until every page has been written:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="img/parquet-organisation.svg" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>Importantly for our purposes each chunk, column, and page is preceded by relevant metadata. In addition, a metadata block is written at the end of the file containing information about the table, and the locations of the various constituent parts.</p>
+<p>There are two key features to this format that make it desirable when working with large data sets:</p>
+<ul>
+<li>Parquet file readers can use metadata to scan the file intelligently: if we know in advance that only some subset of the table is needed for a query, the reader can skip to the relevant pages</li>
+<li>Data are stored in a compressed binary format, which reduces file size relative to an uncompressed text format such as CSV.</li>
+</ul>
+<p>That being said, you probably won’t be surprised to hear that we’re glossing over a lot of details here. You wouldn’t be able to code a parquet reader on the basis of this simplified description! However, that’s not our goal here: the purpose of this description is to give you enough of a sense of how a parquet file is organized, so you can understand <em>why</em> they’re handy when working with large data! You can find a lot more information about these details in the Apache Parquet documentation.</p>
+<p>A single parquet file generally contains a quantity of data small enough to load into memory. For example, let’s say I want to load the NYC taxi data for September 2019. This subset of the data can be stored in a 122MB parquet file, and I can load the whole thing into R as a conventional data frame. It’s about 6.5 million rows, but that’s not too much of a challenge:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="ot">&lt;-</span> <span class="st">"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_09 <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(parquet_file)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_09</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,567,396 × 22
+   vendor_name pickup_datetime     dropoff_datetime    passenger_count
+   &lt;chr&gt;       &lt;dttm&gt;              &lt;dttm&gt;                        &lt;int&gt;
+ 1 VTS         2019-09-01 15:14:09 2019-09-01 15:31:52               2
+ 2 VTS         2019-09-01 15:36:17 2019-09-01 16:12:44               1
+ 3 VTS         2019-09-01 15:29:19 2019-09-01 15:54:13               1
+ 4 CMT         2019-09-01 15:33:09 2019-09-01 15:52:14               2
+ 5 VTS         2019-09-01 15:57:43 2019-09-01 16:26:21               1
+ 6 CMT         2019-09-01 15:59:16 2019-09-01 16:28:12               1
+ 7 CMT         2019-09-01 15:20:06 2019-09-01 15:52:19               1
+ 8 CMT         2019-09-01 15:27:54 2019-09-01 15:32:56               0
+ 9 CMT         2019-09-01 15:35:08 2019-09-01 15:55:51               0
+10 CMT         2019-09-01 15:19:37 2019-09-01 15:30:52               1
+# … with 6,567,386 more rows, and 18 more variables: trip_distance &lt;dbl&gt;,
+#   pickup_longitude &lt;dbl&gt;, pickup_latitude &lt;dbl&gt;, rate_code &lt;chr&gt;,
+#   store_and_fwd &lt;chr&gt;, dropoff_longitude &lt;dbl&gt;, dropoff_latitude &lt;dbl&gt;,
+#   payment_type &lt;chr&gt;, fare_amount &lt;dbl&gt;, extra &lt;dbl&gt;, mta_tax &lt;dbl&gt;,
+#   tip_amount &lt;dbl&gt;, tolls_amount &lt;dbl&gt;, total_amount &lt;dbl&gt;,
+#   improvement_surcharge &lt;dbl&gt;, congestion_surcharge &lt;dbl&gt;,
+#   pickup_location_id &lt;int&gt;, dropoff_location_id &lt;int&gt;</code></pre>
+</div>
+</div>
+<p>One thing to highlight here is that the columnar structure to parquet files makes it possible to load only a subset of the columns:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,567,396 × 4
+   pickup_datetime     pickup_longitude pickup_latitude pickup_location_id
+   &lt;dttm&gt;                         &lt;dbl&gt;           &lt;dbl&gt;              &lt;int&gt;
+ 1 2019-09-01 15:14:09               NA              NA                186
+ 2 2019-09-01 15:36:17               NA              NA                138
+ 3 2019-09-01 15:29:19               NA              NA                132
+ 4 2019-09-01 15:33:09               NA              NA                 79
+ 5 2019-09-01 15:57:43               NA              NA                132
+ 6 2019-09-01 15:59:16               NA              NA                132
+ 7 2019-09-01 15:20:06               NA              NA                132
+ 8 2019-09-01 15:27:54               NA              NA                224
+ 9 2019-09-01 15:35:08               NA              NA                 79
+10 2019-09-01 15:19:37               NA              NA                 97
+# … with 6,567,386 more rows</code></pre>
+</div>
+</div>
+<p>Better yet, the file reader is faster when only a subset of the columns is needed</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_parquet</span>() <span class="sc">|&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.568 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.147 sec elapsed</code></pre>
+</div>
+</div>
+<p>This property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.</p>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Exercises
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Problems</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Solution 1</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Solution 2</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false">Solution 3</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<ol type="1">
+<li><p>Let’s start with some baseline data. Take the data currently stored in <code>nyc_taxi_2019_09</code> and write it to a CSV file using <code>write_csv_arrow()</code> function supplied by the <strong>arrow</strong> package. Using the <code>tic()</code> and <code>toc()</code> functions from <strong>tictoc</strong> package, record how long it took to write the file. Similarly, using the <code>file_size()</code> function from the <strong>fs</strong> package, see how large the file is.</p></li>
+<li><p>Repeat the previous exercise, but this time write the data to a parquet file using <code>write_parquet()</code>. For folks who are new to parquet files: use <code>.parquet</code> as the file extension. How does this compare to the previous exercise?</p></li>
+<li><p>Try reading both files into R using <code>read_csv_arrow()</code> and <code>read_parquet()</code>, and compare load times. As a bonus, try the same thing with <code>as_data_frame = FALSE</code> for both files: that way the data will be read into Arrow memory rather than R memory. Is there a difference in elapsed time?</p></li>
+</ol>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell" data-hash="data-storage_cache/html/csv-write_ec7b901f8dc76ff040dc730b9b1159ce">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv_arrow</span>(nyc_taxi_2019_09, <span class="st">"data/nyc_taxi_2019_09.csv"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>25.553 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file_size</span>(<span class="st">"data/nyc_taxi_2019_09.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>940M</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<div class="cell" data-hash="data-storage_cache/html/parquet-write_f14ea02f8ab46c42cd7e77fff33066b4">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_parquet</span>(nyc_taxi_2019_09, <span class="st">"data/nyc_taxi_2019_09.parquet"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>2.561 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file_size</span>(<span class="st">"data/nyc_taxi_2019_09.parquet"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>125M</code></pre>
+</div>
+</div>
+<p>Writing data from R to a parquet file is faster than writing a CSV file. The end result is much smaller too. The difference in file size is mostly because parquet files are a binary compressed format, whereas CSV files are stored as uncompressed plaintext.</p>
+</div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<p>Recall that in exercises 1 and 2 I saved the data to <code>"data/nyc_taxi_2019_09.csv"</code> and <code>"data/nyc_taxi_2019_09.parquet"</code>. You may have chosen different file paths!</p>
+<p>The first part of the problem asks us to read the CSV file and the parquet file into R, and record the time taken:</p>
+<div class="cell" data-hash="data-storage_cache/html/timing-reads-exercise-1_9d5c27114187a7c634cd8d233870be46">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="st">"data/nyc_taxi_2019_09.csv"</span> <span class="sc">|&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1.603 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="st">"data/nyc_taxi_2019_09.parquet"</span> <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_parquet</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>()</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.539 sec elapsed</code></pre>
+</div>
+</div>
+<p>The parquet file is substantially faster to read.</p>
+<p>The second part of the problem asks us to repeat the exercise, loading the data as an Arrow Table rather than an R data frame. Here’s how we do that:</p>
+<div class="cell" data-hash="data-storage_cache/html/timing-reads-exercise-2_fe808e6074eb1699b8636f8e5e1f5ca8">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="st">"data/nyc_taxi_2019_09.csv"</span> <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv_arrow</span>(<span class="at">as_data_frame =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1.298 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="st">"data/nyc_taxi_2019_09.parquet"</span> <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_parquet</span>(<span class="at">as_data_frame =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>()</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.557 sec elapsed</code></pre>
+</div>
+</div>
+<p>Read times are fairly similar for Arrow as they are for R. Again, the parquet file is faster than the CSV file.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="multi-file-data-sets" class="level2">
+<h2 class="anchored" data-anchor-id="multi-file-data-sets">Multi-file data sets</h2>
+<p>In our hands-on exercises we’ve been working with the <a href="packages-and-data.html">NYC Taxi data</a>, a single tabular data set that is split across 158 distinct parquet files. It’s time to take a closer look at how this works. Let’s start by opening the data:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/"</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FileSystemDataset with 158 Parquet files
+vendor_name: string
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+...</code></pre>
+</div>
+</div>
+<p>The <code>...</code> in the output indicates truncation: I’m only showing the first few lines of output because it’s the first line that’s important. The <code>nyc_taxi</code> object is an Arrow Dataset represented by 158 files. We can inspect the <code>files</code> field of this object to find the paths to these files:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [1] "/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet" 
+  [2] "/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet"
+  [3] "/home/danielle/Datasets/nyc-taxi/year=2009/month=11/part-0.parquet"
+  [4] "/home/danielle/Datasets/nyc-taxi/year=2009/month=12/part-0.parquet"
+  [5] "/home/danielle/Datasets/nyc-taxi/year=2009/month=2/part-0.parquet" 
+...</code></pre>
+</div>
+</div>
+<p>Notice that the filenames are structured. They’re organised by year and month and – as you might expect – the data for September 2016 can be found in the <code>year=2016/month=9/</code> folder. Not only that, the folder names correspond to actual field-value pairings in the data. The <code>nyc_taxi</code> data set has variables named <code>year</code> and <code>month</code>, and those variables can take values <code>2016</code> and <code>9</code> respectively. This convention, in which folders are named using the relevant filed-value pairs, is referred to as “Hive partitioning”, based on the <a href="https://hive.apache.org/">Apache Hive project</a>.</p>
+<p>Partitioning the data set in a thoughtful way is one of those tricks used to make large data sets manageable. If I want to compute some quantity based only on the rides that took place in September 2019, I can ask the operating system to open the one file containing that data. My query never has to touch the other 157 files. To give a sense of how much of a difference this makes, let’s compare two different queries. The first one extracts a subset of about 10 million rows, based on the partitioning variables:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2016</span>, month <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10116018</code></pre>
+</div>
+</div>
+<p>The second one extracts a subset of about the same size, again about 10 million rows, based on the pickup location zone:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">==</span> <span class="dv">138</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 10823589</code></pre>
+</div>
+</div>
+<p>Neither of these queries do very much with the data: they’re just inspecting the metadata to count the number of rows. However, the first query only needs to look at the metadata in one file, whereas the second one has to extract and aggregate data from all 158 files. The difference in compute time is striking:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2016</span>, month <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.018 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">==</span> <span class="dv">138</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nrow</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>3.298 sec elapsed</code></pre>
+</div>
+</div>
+<p>Admittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.</p>
+<p>This leads to a natural question: how many variables should we partition on? The <code>nyc_taxi</code> data set is partitioned on <code>year</code> and <code>month</code>, but there’s nothing stopping us from defining a <code>weekday</code> variable that takes on values of Sunday, Monday, etc, and using that to define a third level of partitioning. Or we could have chosen to drop <code>month</code> entirely and partition only on <code>year</code>. Which approach is best?</p>
+<p>The answer, boringly, is that it depends. As a general rule, if you break the data up into too many small data sets, the operating system has to do too much work searching for the files you want; too few, and you end up with some very large and unwieldy files that are hard to move around and search. So there’s often a sweet spot where you partition based on small number of variables (usually those that are used most often in queries) and end up with a manageable number of files of a manageable size. These rough guidelines can help avoid some known worst cases:</p>
+<ul>
+<li>Avoid files smaller than 20MB and larger than 2GB.</li>
+<li>Avoid partitioning layouts with more than 10,000 distinct partitions.</li>
+</ul>
+<p>As an aside, you can apply the same guidelines when thinking about how to structure groups within file types such as parquet that have a notion of row chunks etc, because the same tradeoffs exist there.</p>
+</section>
+<section id="an-example" class="level2">
+<h2 class="anchored" data-anchor-id="an-example">An example</h2>
+<p>Okay, enough theory. Let’s actually do this. We’ve already seen the “read” functionality in action, but I’m going to do it again with some additional arguments specified. This time around, I’m going to open a smaller subset, corresponding only to the 2016 data:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016a <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sources =</span> <span class="st">"~/Datasets/nyc-taxi/year=2016/"</span>,</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">"parquet"</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">unify_schemas =</span> <span class="cn">TRUE</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In this version of the command I’ve explicitly stated that I’m looking for parquet files, though I didn’t really need to do this because <code>format = "parquet"</code> is the default. I’ve also set <code>unify_schemas</code> to <code>TRUE</code> rather than the default value of <code>FALSE</code>. What this argument refers to is the way <code>open_dataset()</code> aggregates the data files. When <code>unify_schemas = TRUE</code>, it examines every data file to find names and data types for each column (i.e., the schema for the data set), and then seeks to aggregate those into a coherent whole. This can be time consuming, and is usually unnecessary because the data are written in the exact same format in every file. As a consequence, when <code>unify_schemas = FALSE</code> (the default), the scanner will just look at the first file and assume that every data file has the same schema.</p>
+<p>Okay, so let’s have a look at the data:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FileSystemDataset with 12 Parquet files
+vendor_name: string
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+...</code></pre>
+</div>
+</div>
+<p>As expected, this is a multi-file Dataset object constructed from 12 files.</p>
+<p>Next, let’s imagine that we’re about to write an application whose primary function is to look at the different vendors who provide the raw data on a monthly basis. That’s a highly specialized use of this data set, and it may be advantageous to partition by <code>month</code> and <code>vendor_name</code> because those are the variables we’re likely to be querying on later. Because the philosophy of the <strong>arrow</strong> package is to try to preserve <strong>dplyr</strong> logic to the greatest possible extent, the default behaviour of <code>write_dataset()</code> is to inspect the grouping variables for the data and use those to construct a Hive-style partition. So if I want to write this Dataset to file using month and vendor as my partitioning variables I would do this:</p>
+<div class="cell" data-hash="data-storage_cache/html/writing-dataset-a_cab27219e3454c0cda472f1e2349f400">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016a <span class="sc">|&gt;</span> </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month, vendor_name) <span class="sc">|&gt;</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">"~/Datasets/nyc-taxi_2016"</span>)</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>39.782 sec elapsed</code></pre>
+</div>
+</div>
+<p>As you can see, this write operation does take a little while to finish, but half a minute isn’t too bad.</p>
+<p>In any case, I can open the new data set the same way as before:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016b <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi_2016"</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FileSystemDataset with 27 Parquet files
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+trip_distance: double
+...</code></pre>
+</div>
+</div>
+<p>Notice the difference between <code>nyc_taxi_2016a</code> and <code>nyc_taxi_2016b</code>. The both refer to the same data conceptually (i.e., all the taxi rides from 2016), but they’re linked to different files and they carve up the dataset in different ways:</p>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016a<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "/home/danielle/Datasets/nyc-taxi/year=2016/month=1/part-0.parquet" 
+ [2] "/home/danielle/Datasets/nyc-taxi/year=2016/month=10/part-0.parquet"
+ [3] "/home/danielle/Datasets/nyc-taxi/year=2016/month=11/part-0.parquet"
+ [4] "/home/danielle/Datasets/nyc-taxi/year=2016/month=12/part-0.parquet"
+ [5] "/home/danielle/Datasets/nyc-taxi/year=2016/month=2/part-0.parquet" 
+...</code></pre>
+</div>
+</div>
+<div class="cell" data-out.lines="5">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016b<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=CMT/part-0.parquet"                       
+ [2] "/home/danielle/Datasets/nyc-taxi_2016/month=1/vendor_name=VTS/part-0.parquet"                       
+ [3] "/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=CMT/part-0.parquet"                      
+ [4] "/home/danielle/Datasets/nyc-taxi_2016/month=10/vendor_name=VTS/part-0.parquet"                      
+ [5] "/home/danielle/Datasets/nyc-taxi_2016/month=11/vendor_name=CMT/part-0.parquet"                      
+...</code></pre>
+</div>
+</div>
+<p>To give you a sense of the difference between the two, here’s an example of a (somewhat) realistic query, computed on the <code>nyc_taxi_2016b</code> data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2016b <span class="sc">|&gt;</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(vendor_name <span class="sc">==</span> <span class="st">"CMT"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">|&gt;</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">distance =</span> <span class="fu">sum</span>(trip_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 2
+   month  distance
+   &lt;int&gt;     &lt;dbl&gt;
+ 1     1 33436823.
+ 2    10 41799496.
+ 3    12 13642500.
+ 4    11 13826243.
+ 5     2 40006137.
+ 6     3 55384892.
+ 7     4 27440575.
+ 8     5 52798627.
+ 9     6 15617981.
+10     7 19210103.
+11     8 22581320.
+12     9 76139235 </code></pre>
+</div>
+</div>
+<p>Here’s the time taken for this query:</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>0.514 sec elapsed</code></pre>
+</div>
+</div>
+<p>and for the same query performed on the <code>nyc_taxi_2016a</code> data:</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>1.854 sec elapsed</code></pre>
+</div>
+</div>
+<p>The difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!</p>
+<div class="callout-tip callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Exercises
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Problems</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Solution 1</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-3" role="tab" aria-controls="tabset-2-3" aria-selected="false">Solution 2</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-4" role="tab" aria-controls="tabset-2-4" aria-selected="false">Solution 3</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<ol type="1">
+<li><p>(Preliminary) Write a query that picks out the 2019 NYC Taxi data and – in addition to the <code>month</code> and <code>year</code> columns already existing in the data – adds columns for <code>monthday</code> and <code>yearday</code> specifying the day of the month and the day of the year on which the pickup took place (note: <strong>lubridate</strong> functions <code>day()</code> and <code>yday()</code> are both supported). Check that your query works by selecting the <code>pickup_datetime</code> column and your newly-created <code>monthday</code> and <code>yearday</code> columns and then collecting the first few rows.</p></li>
+<li><p>Using this query, write the 2019 NYC Taxi data to a multi-file dataset – twice. The first time you do it, partition by <code>month</code> and <code>monthday</code>. The second time you do it, partition by <code>yearday</code>. Notice that both of these produce 365 files, each of which contain the exact same subset of data!</p></li>
+<li><p>Using <em>only</em> the datasets that you have just written to disk (i.e., you’ll have to reopen them using <code>open_dataset()</code>), calculate the total amount of money charged (as measured by the <code>total_amount</code> variable) each day, for the 81st through 90th day of the year (using the <code>yearday</code> variable). Do this for <em>both</em> versions of the dataset that you just created, and record how long it took to finish in both cases. What do you notice?</p></li>
+</ol>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<p>The query:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_days <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2019</span>) <span class="sc">|&gt;</span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">monthday =</span> <span class="fu">day</span>(pickup_datetime),</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">yearday =</span> <span class="fu">yday</span>(pickup_datetime)</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The check:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_days <span class="sc">|&gt;</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(pickup_datetime, monthday, yearday) <span class="sc">|&gt;</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  pickup_datetime     monthday yearday
+  &lt;dttm&gt;                 &lt;int&gt;   &lt;int&gt;
+1 2019-10-02 06:41:22        1     274
+2 2019-10-02 06:53:46        1     274
+3 2019-10-02 06:05:22        1     274
+4 2019-10-02 06:19:59        1     274
+5 2019-10-02 06:45:45        1     274
+6 2019-10-02 06:03:44        1     274</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
+<div class="cell" data-hash="data-storage_cache/html/write-2019-data_1f67648087a653be2769e3da5c36e952">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_days <span class="sc">|&gt;</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month, monthday) <span class="sc">|&gt;</span></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">"data/nyc_taxi_2019_monthday"</span>)</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>27.536 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_days <span class="sc">|&gt;</span></span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(yearday) <span class="sc">|&gt;</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">"data/nyc_taxi_2019_yearday"</span>)</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>27.183 sec elapsed</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-2-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-4-tab">
+<p>First, we’ll open the two datasets:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_monthday <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"data/nyc_taxi_2019_monthday"</span>)</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_yearday <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"data/nyc_taxi_2019_yearday"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Here’s the solution for the month/day version:</p>
+<div class="cell" data-hash="data-storage_cache/html/monthday-query_82d576c33b1fe39dd11209dd47d7ad8f">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_monthday <span class="sc">|&gt;</span></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(yearday <span class="sc">%in%</span> <span class="dv">81</span><span class="sc">:</span><span class="dv">90</span>) <span class="sc">|&gt;</span></span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(yearday) <span class="sc">|&gt;</span></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">gross =</span> <span class="fu">sum</span>(total_amount)) <span class="sc">|&gt;</span></span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 2
+   yearday    gross
+     &lt;int&gt;    &lt;dbl&gt;
+ 1      86 4877420.
+ 2      88 4968074.
+ 3      87 5115909.
+ 4      90 4186767.
+ 5      83 4106132.
+ 6      82 4578253.
+ 7      81 5314584.
+ 8      84 4152380.
+ 9      85 4611179.
+10      89 4580226.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.347 sec elapsed</code></pre>
+</div>
+</div>
+<p>Repeating the same exercises for the yearday version:</p>
+<div class="cell" data-hash="data-storage_cache/html/yearday-query_7e2eadeb52e8302aba53d71bb3549f84">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi_2019_yearday <span class="sc">|&gt;</span></span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(yearday <span class="sc">%in%</span> <span class="dv">81</span><span class="sc">:</span><span class="dv">90</span>) <span class="sc">|&gt;</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(yearday) <span class="sc">|&gt;</span></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">gross =</span> <span class="fu">sum</span>(total_amount)) <span class="sc">|&gt;</span></span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 2
+   yearday    gross
+     &lt;int&gt;    &lt;dbl&gt;
+ 1      83 4106132.
+ 2      85 4611179.
+ 3      87 5115909.
+ 4      88 4968074.
+ 5      90 4186767.
+ 6      89 4580226.
+ 7      81 5314584.
+ 8      84 4152380.
+ 9      82 4578253.
+10      86 4877420.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.098 sec elapsed</code></pre>
+</div>
+</div>
+<p>The difference is… not subtle.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
