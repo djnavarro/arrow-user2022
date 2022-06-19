@@ -620,4 +620,235 @@ toc()
 ```
 
 
+# Advanced Arrow
+
+Section 11: In which we talk about data structures
+
+## Data frames in R
+
+![](img/tabular-structures-r.png)
+
+## Arrow record batches
+
+![](img/tabular-structures-arrow-2.png)
+
+## Arrow tables
+
+![](img/tabular-structures-arrow-1.png)
+
+
+## Arrow scalars
+
+```{r}
+Scalar$create("New York")
+```
+
+## Arrow arrays
+
+```{r}
+city <- Array$create(c("New York", NA, NA, "Philadelphia"))
+city
+```
+
+## Arrow arrays
+
+```{r}
+city[1:2]
+```
+
+## Arrow arrays
+
+![](img/array-in-memory.png)
+
+## Chunked arrays
+
+![](img/chunked-array-in-memory.png)
+
+## Chunked arrays
+
+```{r}
+city <- ChunkedArray$create(
+  c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+  c("Sydney", "Barcelona")
+)
+city
+```
+
+
+## Chunked arrays
+
+```{r}
+city <- chunked_array(
+  c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+  c("Sydney", "Barcelona")
+)
+city
+```
+
+
+
+## Chunked arrays
+
+```{r}
+city[4:6]
+```
+
+## Tables are collections of chunked arrays
+
+```{r}
+riots <- arrow_table(
+  location = chunked_array(
+    c("Stonewall Inn", "Compton's Cafeteria", "Cooper Do-nuts", "Dewey's"), 
+    c("King's Cross", "La Rambla")
+  ), 
+  year = chunked_array(
+    c(1969, 1966, 1959, 1965),
+    c(1978, 1977)
+  ),
+  city = chunked_array(
+    c("New York", "San Francisco", "Los Angeles", "Philadelphia"),
+    c("Sydney", "Barcelona")
+  )
+)
+riots
+```
+
+
+## Tables are collections of chunked arrays
+
+```{r}
+riots$city
+```
+
+## Pulling into R
+
+```{r}
+as.data.frame(riots)
+```
+
+# Mapping scalar types
+
+Section 12: In which the devil is in the detail
+
+## Mapping scalar types
+
+![](img/scalar-numeric-types-1.png)
+
+## Mapping scalar types
+
+![](img/scalar-numeric-types-2.png)
+
+## Mapping scalar types
+
+![](img/scalar-other-types.png)
+
+# Wrapping up
+
+Section 13: In which we consider the big picture
+
+
+## Some things really need Arrow
+
+```{r airport-pickups-arrow, cache=TRUE}
+nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |> 
+  read_csv_arrow(
+    as_data_frame = FALSE, 
+    skip = 1, 
+    schema = schema(
+      LocationID = int64(),
+      Borough = utf8(),
+      Zone = utf8(),
+      service_zone = utf8()
+    )
+  ) |>
+  rename(
+    location_id = LocationID,
+    borough = Borough,
+    zone = Zone,
+    service_zone = service_zone
+  )
+  
+airport_zones <- nyc_taxi_zones |>
+  filter(str_detect(zone, "Airport")) |>
+  pull(location_id)
+
+dropoff_zones <- nyc_taxi_zones |>
+  select(
+    dropoff_location_id = location_id,
+    dropoff_zone = zone
+  ) 
+
+airport_pickups <- nyc_taxi |>
+  filter(pickup_location_id %in% airport_zones) |>
+  select(
+    matches("datetime"),
+    matches("location_id")
+  ) |>
+  left_join(dropoff_zones) |>
+  count(dropoff_zone) |>
+  arrange(desc(n)) |>
+  collect()
+```
+
+## Other things really need R
+
+```{r airport-pickups-ggplot}
+#| message: false
+dat <- "data/taxi_zones/taxi_zones.shp" |>
+  read_sf() |>
+  clean_names() |>
+  left_join(airport_pickups,
+            by = c("zone" = "dropoff_zone")) |>
+  arrange(desc(n))
+
+the_big_picture <- dat |>
+  ggplot(aes(fill = n)) +
+  geom_sf(size = .1, color = "#222222") +
+  scale_fill_distiller(
+    name = "Number of trips",
+    labels = label_comma(),
+    palette = "Oranges",
+    direction = 1
+  ) +
+  geom_label_repel(
+    stat = "sf_coordinates",
+    data = dat |>
+      mutate(zone = case_when(
+        str_detect(zone, "Airport") ~ zone,
+        str_detect(zone, "Times") ~ zone,
+        TRUE ~ "")
+      ),
+    mapping = aes(label = zone, geometry = geometry),
+    max.overlaps = 50,
+    box.padding = .5,
+    label.padding = .5,
+    label.size = .15,
+    label.r = 0,
+    force = 30,
+    force_pull = 0,
+    fill = "white",
+    min.segment.length = 0
+  ) +
+  theme_void() +
+  theme(
+    text = element_text(colour = "black"), 
+    plot.background = element_rect(colour = NA, fill = "#839496"),
+    legend.background = element_rect(fill = "white"),
+    legend.margin = margin(10, 10, 10, 10)
+  )
+```
+
+
+## {arrow} brings them together
+
+```{r airport-pickups-render, cache=TRUE}
+#| column: screen
+#| fig-width: 10
+#| fig-height: 6
+#| fig-dpi: 300
+#| message: false
+#| dev.args: !expr list(bg="#839496")
+the_big_picture
+```
+
 

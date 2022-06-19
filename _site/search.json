@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.47 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.109 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.473 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.104 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,13 +697,160 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.518 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.515 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
     "href": "slides.html#writing-datasets",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Writing datasets",
-    "text": "Writing datasets\n\ntic()\nnyc_taxi |> \n  filter(year == 2017) |>\n  group_by(month, vendor_name) |>\n  write_dataset(\"~/Datasets/nyc-taxi_2017\")\ntoc()\n\n17.617 sec elapsed\n\n\n\n\narrow-user2022.netlify.app"
+    "text": "Writing datasets\n\ntic()\nnyc_taxi |> \n  filter(year == 2017) |>\n  group_by(month, vendor_name) |>\n  write_dataset(\"~/Datasets/nyc-taxi_2017\")\ntoc()\n\n17.617 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#data-frames-in-r",
+    "href": "slides.html#data-frames-in-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Data frames in R",
+    "text": "Data frames in R"
+  },
+  {
+    "objectID": "slides.html#arrow-record-batches",
+    "href": "slides.html#arrow-record-batches",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow record batches",
+    "text": "Arrow record batches"
+  },
+  {
+    "objectID": "slides.html#arrow-tables",
+    "href": "slides.html#arrow-tables",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow tables",
+    "text": "Arrow tables"
+  },
+  {
+    "objectID": "slides.html#arrow-scalars",
+    "href": "slides.html#arrow-scalars",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow scalars",
+    "text": "Arrow scalars\n\nScalar$create(\"New York\")\n\nScalar\nNew York"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays",
+    "href": "slides.html#arrow-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays\n\ncity <- Array$create(c(\"New York\", NA, NA, \"Philadelphia\"))\ncity\n\nArray\n<string>\n[\n  \"New York\",\n  null,\n  null,\n  \"Philadelphia\"\n]"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays-1",
+    "href": "slides.html#arrow-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays\n\ncity[1:2]\n\nArray\n<string>\n[\n  \"New York\",\n  null\n]"
+  },
+  {
+    "objectID": "slides.html#arrow-arrays-2",
+    "href": "slides.html#arrow-arrays-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow arrays",
+    "text": "Arrow arrays"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays",
+    "href": "slides.html#chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-1",
+    "href": "slides.html#chunked-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity <- ChunkedArray$create(\n  c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n  c(\"Sydney\", \"Barcelona\")\n)\ncity\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-2",
+    "href": "slides.html#chunked-arrays-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity <- chunked_array(\n  c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n  c(\"Sydney\", \"Barcelona\")\n)\ncity\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#chunked-arrays-3",
+    "href": "slides.html#chunked-arrays-3",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Chunked arrays",
+    "text": "Chunked arrays\n\ncity[4:6]\n\nChunkedArray\n[\n  [\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#tables-are-collections-of-chunked-arrays",
+    "href": "slides.html#tables-are-collections-of-chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tables are collections of chunked arrays",
+    "text": "Tables are collections of chunked arrays\n\nriots <- arrow_table(\n  location = chunked_array(\n    c(\"Stonewall Inn\", \"Compton's Cafeteria\", \"Cooper Do-nuts\", \"Dewey's\"), \n    c(\"King's Cross\", \"La Rambla\")\n  ), \n  year = chunked_array(\n    c(1969, 1966, 1959, 1965),\n    c(1978, 1977)\n  ),\n  city = chunked_array(\n    c(\"New York\", \"San Francisco\", \"Los Angeles\", \"Philadelphia\"),\n    c(\"Sydney\", \"Barcelona\")\n  )\n)\nriots\n\nTable\n6 rows x 3 columns\n$location <string>\n$year <double>\n$city <string>"
+  },
+  {
+    "objectID": "slides.html#tables-are-collections-of-chunked-arrays-1",
+    "href": "slides.html#tables-are-collections-of-chunked-arrays-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tables are collections of chunked arrays",
+    "text": "Tables are collections of chunked arrays\n\nriots$city\n\nChunkedArray\n[\n  [\n    \"New York\",\n    \"San Francisco\",\n    \"Los Angeles\",\n    \"Philadelphia\"\n  ],\n  [\n    \"Sydney\",\n    \"Barcelona\"\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#pulling-into-r",
+    "href": "slides.html#pulling-into-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pulling into R",
+    "text": "Pulling into R\n\nas.data.frame(riots)\n\n# A tibble: 6 × 3\n  location             year city         \n  <chr>               <dbl> <chr>        \n1 Stonewall Inn        1969 New York     \n2 Compton's Cafeteria  1966 San Francisco\n3 Cooper Do-nuts       1959 Los Angeles  \n4 Dewey's              1965 Philadelphia \n5 King's Cross         1978 Sydney       \n6 La Rambla            1977 Barcelona"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-1",
+    "href": "slides.html#mapping-scalar-types-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-2",
+    "href": "slides.html#mapping-scalar-types-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#mapping-scalar-types-3",
+    "href": "slides.html#mapping-scalar-types-3",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mapping scalar types",
+    "text": "Mapping scalar types"
+  },
+  {
+    "objectID": "slides.html#some-code-really-needs-arrow",
+    "href": "slides.html#some-code-really-needs-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Some code really needs {arrow}",
+    "text": "Some code really needs {arrow}\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow(\n    as_data_frame = FALSE, \n    skip = 1, \n    schema = schema(\n      LocationID = int64(),\n      Borough = utf8(),\n      Zone = utf8(),\n      service_zone = utf8()\n    )\n  ) |>\n  rename(\n    location_id = LocationID,\n    borough = Borough,\n    zone = Zone,\n    service_zone = service_zone\n  )\n  \nairport_zones <- nyc_taxi_zones |>\n  filter(str_detect(zone, \"Airport\")) |>\n  pull(location_id)\n\ndropoff_zones <- nyc_taxi_zones |>\n  select(\n    dropoff_location_id = location_id,\n    dropoff_zone = zone\n  ) \n\nairport_pickups <- nyc_taxi |>\n  filter(pickup_location_id %in% airport_zones) |>\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |>\n  left_join(dropoff_zones) |>\n  count(dropoff_zone) |>\n  arrange(desc(n)) |>\n  collect()\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#some-things-really-need-arrow",
+    "href": "slides.html#some-things-really-need-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Some things really need Arrow",
+    "text": "Some things really need Arrow\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow(\n    as_data_frame = FALSE, \n    skip = 1, \n    schema = schema(\n      LocationID = int64(),\n      Borough = utf8(),\n      Zone = utf8(),\n      service_zone = utf8()\n    )\n  ) |>\n  rename(\n    location_id = LocationID,\n    borough = Borough,\n    zone = Zone,\n    service_zone = service_zone\n  )\n  \nairport_zones <- nyc_taxi_zones |>\n  filter(str_detect(zone, \"Airport\")) |>\n  pull(location_id)\n\ndropoff_zones <- nyc_taxi_zones |>\n  select(\n    dropoff_location_id = location_id,\n    dropoff_zone = zone\n  ) \n\nairport_pickups <- nyc_taxi |>\n  filter(pickup_location_id %in% airport_zones) |>\n  select(\n    matches(\"datetime\"),\n    matches(\"location_id\")\n  ) |>\n  left_join(dropoff_zones) |>\n  count(dropoff_zone) |>\n  arrange(desc(n)) |>\n  collect()"
+  },
+  {
+    "objectID": "slides.html#other-things-really-need-r",
+    "href": "slides.html#other-things-really-need-r",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Other things really need R",
+    "text": "Other things really need R\n\ndat <- \"data/taxi_zones/taxi_zones.shp\" |>\n  read_sf() |>\n  clean_names() |>\n  left_join(airport_pickups,\n            by = c(\"zone\" = \"dropoff_zone\")) |>\n  arrange(desc(n))\n\nthe_big_picture <- dat |>\n  ggplot(aes(fill = n)) +\n  geom_sf(size = .1, color = \"#222222\") +\n  scale_fill_distiller(\n    name = \"Number of trips\",\n    labels = label_comma(),\n    palette = \"Oranges\",\n    direction = 1\n  ) +\n  geom_label_repel(\n    stat = \"sf_coordinates\",\n    data = dat |>\n      mutate(zone = case_when(\n        str_detect(zone, \"Airport\") ~ zone,\n        str_detect(zone, \"Times\") ~ zone,\n        TRUE ~ \"\")\n      ),\n    mapping = aes(label = zone, geometry = geometry),\n    max.overlaps = 50,\n    box.padding = .5,\n    label.padding = .5,\n    label.size = .15,\n    label.r = 0,\n    force = 30,\n    force_pull = 0,\n    fill = \"white\",\n    min.segment.length = 0\n  ) +\n  theme_void() +\n  theme(\n    text = element_text(colour = \"black\"), \n    plot.background = element_rect(colour = NA, fill = \"#839496\"),\n    legend.background = element_rect(fill = \"white\"),\n    legend.margin = margin(10, 10, 10, 10)\n  )"
+  },
+  {
+    "objectID": "slides.html#arrow-brings-them-together",
+    "href": "slides.html#arrow-brings-them-together",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "{arrow} brings them together",
+    "text": "{arrow} brings them together\n\nthe_big_picture\n\n\n\n\narrow-user2022.netlify.app"
   }
 ]
