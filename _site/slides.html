@@ -880,14 +880,347 @@ $service_zone &lt;string&gt;</code></pre>
 </div>
 <p>The output is correct: <code>hour == 3</code> refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)</p>
 </section></section>
+<section>
 <section id="database-joins" class="title-slide slide level1 center">
 <h1>Database joins</h1>
 <p>Section 7: In which we explore two-table joins and encounter some potential traps for the unwary</p>
+</section>
+<section id="penguin-data" class="slide level2">
+<h2>Penguin data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1"></a>penguins</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 8
+   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt;         &lt;dbl&gt;             &lt;int&gt;       &lt;int&gt;
+ 1 Adelie  Torgersen           39.1          18.7               181        3750
+ 2 Adelie  Torgersen           39.5          17.4               186        3800
+ 3 Adelie  Torgersen           40.3          18                 195        3250
+ 4 Adelie  Torgersen           NA            NA                  NA          NA
+ 5 Adelie  Torgersen           36.7          19.3               193        3450
+ 6 Adelie  Torgersen           39.3          20.6               190        3650
+ 7 Adelie  Torgersen           38.9          17.8               181        3625
+ 8 Adelie  Torgersen           39.2          19.6               195        4675
+ 9 Adelie  Torgersen           34.1          18.1               193        3475
+10 Adelie  Torgersen           42            20.2               190        4250
+# … with 334 more rows, and 2 more variables: sex &lt;fct&gt;, year &lt;int&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="penguin-data-an-auxiliary-table" class="slide level2">
+<h2>Penguin data: An auxiliary table</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1"></a>location <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
+<span id="cb37-2"><a href="#cb37-2"></a>  <span class="at">island =</span> <span class="fu">c</span>(<span class="st">"Torgersen"</span>, <span class="st">"Biscoe"</span>, <span class="st">"Dream"</span>), </span>
+<span id="cb37-3"><a href="#cb37-3"></a>  <span class="at">lon =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.77</span>, <span class="sc">-</span><span class="fl">65.43</span>, <span class="sc">-</span><span class="fl">64.73</span>),</span>
+<span id="cb37-4"><a href="#cb37-4"></a>  <span class="at">lat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.08</span>, <span class="sc">-</span><span class="fl">65.50</span>, <span class="sc">-</span><span class="fl">64.23</span>)</span>
+<span id="cb37-5"><a href="#cb37-5"></a>)  </span>
+<span id="cb37-6"><a href="#cb37-6"></a>location</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table
+3 rows x 3 columns
+$island &lt;string&gt;
+$lon &lt;double&gt;
+$lat &lt;double&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="left-joining-penguins-and-location" class="slide level2">
+<h2>Left joining penguins and location</h2>
+
+<img data-src="img/left-join-penguin.png" class="r-stretch"></section>
+<section id="left-joining-works-as-expected" class="slide level2">
+<h2>Left joining works as expected</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb39-2"><a href="#cb39-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb39-3"><a href="#cb39-3"></a>  <span class="fu">left_join</span>(location) <span class="sc">|&gt;</span> </span>
+<span id="cb39-4"><a href="#cb39-4"></a>  <span class="fu">select</span>(species, island, bill_length_mm, lon, lat) <span class="sc">|&gt;</span></span>
+<span id="cb39-5"><a href="#cb39-5"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 344 × 5
+   species island    bill_length_mm   lon   lat
+   &lt;fct&gt;   &lt;fct&gt;              &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1 Adelie  Torgersen           39.1 -64.8 -64.1
+ 2 Adelie  Torgersen           39.5 -64.8 -64.1
+ 3 Adelie  Torgersen           40.3 -64.8 -64.1
+ 4 Adelie  Torgersen           NA   -64.8 -64.1
+ 5 Adelie  Torgersen           36.7 -64.8 -64.1
+ 6 Adelie  Torgersen           39.3 -64.8 -64.1
+ 7 Adelie  Torgersen           38.9 -64.8 -64.1
+ 8 Adelie  Torgersen           39.2 -64.8 -64.1
+ 9 Adelie  Torgersen           34.1 -64.8 -64.1
+10 Adelie  Torgersen           42   -64.8 -64.1
+# … with 334 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="traps-for-the-unwary" class="slide level2">
+<h2>Traps for the unwary…</h2>
+
+<img data-src="img/left-join-taxi.png" class="r-stretch"></section>
+<section id="traps-for-the-unwary-1" class="slide level2">
+<h2>Traps for the unwary…</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb41-2"><a href="#cb41-2"></a>  <span class="fu">select</span>(</span>
+<span id="cb41-3"><a href="#cb41-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb41-4"><a href="#cb41-4"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb41-5"><a href="#cb41-5"></a>  )</span>
+<span id="cb41-6"><a href="#cb41-6"></a></span>
+<span id="cb41-7"><a href="#cb41-7"></a>pickup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 2
+   pickup_location_id pickup_borough
+                &lt;int&gt; &lt;chr&gt;         
+ 1                  1 EWR           
+ 2                  2 Queens        
+ 3                  3 Bronx         
+ 4                  4 Manhattan     
+ 5                  5 Staten Island 
+ 6                  6 Staten Island 
+ 7                  7 Queens        
+ 8                  8 Queens        
+ 9                  9 Queens        
+10                 10 Queens        
+# … with 255 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="traps-for-the-unwary-2" class="slide level2">
+<h2>Traps for the unwary…</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb43-2"><a href="#cb43-2"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb43-3"><a href="#cb43-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `collect()`:
+! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32</code></pre>
+</div>
+</div>
+</section>
+<section id="why-didnt-this-work" class="slide level2">
+<h2>Why didn’t this work?</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>nyc_taxi<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+vendor_name: string
+pickup_datetime: timestamp[ms]
+dropoff_datetime: timestamp[ms]
+passenger_count: int64
+trip_distance: double
+pickup_longitude: double
+pickup_latitude: double
+rate_code: string
+store_and_fwd: string
+dropoff_longitude: double
+dropoff_latitude: double
+payment_type: string
+fare_amount: double
+extra: double
+mta_tax: double
+tip_amount: double
+tolls_amount: double
+total_amount: double
+improvement_surcharge: double
+congestion_surcharge: double
+pickup_location_id: int64
+dropoff_location_id: int64
+year: int32
+month: int32</code></pre>
+</div>
+</div>
+</section>
+<section id="why-didnt-this-work-1" class="slide level2">
+<h2>Why didn’t this work?</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a><span class="fu">arrow_table</span>(pickup)<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+pickup_location_id: int32
+pickup_borough: string</code></pre>
+</div>
+</div>
+</section>
+<section id="controlling-the-schema" class="slide level2">
+<h2>Controlling the schema</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb49-2"><a href="#cb49-2"></a>  <span class="fu">as_arrow_table</span>(</span>
+<span id="cb49-3"><a href="#cb49-3"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
+<span id="cb49-4"><a href="#cb49-4"></a>      <span class="at">location_id =</span> <span class="fu">int64</span>(),</span>
+<span id="cb49-5"><a href="#cb49-5"></a>      <span class="at">borough =</span> <span class="fu">utf8</span>(), </span>
+<span id="cb49-6"><a href="#cb49-6"></a>      <span class="at">zone =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb49-7"><a href="#cb49-7"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
+<span id="cb49-8"><a href="#cb49-8"></a>    )</span>
+<span id="cb49-9"><a href="#cb49-9"></a>  )</span>
+<span id="cb49-10"><a href="#cb49-10"></a></span>
+<span id="cb49-11"><a href="#cb49-11"></a>nyc_taxi_zones<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Schema
+location_id: int64
+borough: string
+zone: string
+service_zone: string</code></pre>
+</div>
+</div>
+</section>
+<section id="fixing-the-query" class="slide level2">
+<h2>Fixing the query</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb51-2"><a href="#cb51-2"></a>  <span class="fu">select</span>(</span>
+<span id="cb51-3"><a href="#cb51-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb51-4"><a href="#cb51-4"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb51-5"><a href="#cb51-5"></a>  )</span>
+<span id="cb51-6"><a href="#cb51-6"></a></span>
+<span id="cb51-7"><a href="#cb51-7"></a>dropoff <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb51-8"><a href="#cb51-8"></a>  <span class="fu">select</span>(</span>
+<span id="cb51-9"><a href="#cb51-9"></a>    <span class="at">dropoff_location_id =</span> location_id, </span>
+<span id="cb51-10"><a href="#cb51-10"></a>    <span class="at">dropoff_borough =</span> borough</span>
+<span id="cb51-11"><a href="#cb51-11"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="fixing-the-query-1" class="slide level2">
+<h2>Fixing the query</h2>
+<div class="cell" data-hash="slides_cache/revealjs/fixing-the-query_33b8d873c99f4b0fe4e8e4e763bbd2bc">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1"></a><span class="fu">tic</span>()</span>
+<span id="cb52-2"><a href="#cb52-2"></a>borough_counts <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb52-3"><a href="#cb52-3"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb52-4"><a href="#cb52-4"></a>  <span class="fu">left_join</span>(dropoff) <span class="sc">|&gt;</span></span>
+<span id="cb52-5"><a href="#cb52-5"></a>  <span class="fu">count</span>(pickup_borough, dropoff_borough) <span class="sc">|&gt;</span></span>
+<span id="cb52-6"><a href="#cb52-6"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb52-7"><a href="#cb52-7"></a>  <span class="fu">collect</span>()</span>
+<span id="cb52-8"><a href="#cb52-8"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>509.919 sec elapsed</code></pre>
+</div>
+</div>
+</section>
+<section id="fixing-the-query-2" class="slide level2">
+<h2>Fixing the query</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1"></a>borough_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 50 × 3
+   pickup_borough dropoff_borough          n
+   &lt;chr&gt;          &lt;chr&gt;                &lt;int&gt;
+ 1 &lt;NA&gt;           &lt;NA&gt;            1249152360
+ 2 Manhattan      Manhattan        355850092
+ 3 Queens         Manhattan         14648891
+ 4 Manhattan      Queens            13186443
+ 5 Manhattan      Brooklyn          11294128
+ 6 Queens         Queens             7537042
+ 7 Unknown        Unknown            4519763
+ 8 Queens         Brooklyn           3727686
+ 9 Brooklyn       Brooklyn           3566671
+10 Manhattan      Bronx              2091627
+# … with 40 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="exercise" class="slide level2">
+<h2>Exercise</h2>
+<p>How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)?</p>
+</section></section>
+<section>
+<section id="using-duckdb" class="title-slide slide level1 center">
+<h1>Using DuckDB</h1>
+<p>Section 8: In which {arrow} and {duckdb} play nicely</p>
+</section>
+<section id="a-difficulty-in-arrow" class="slide level2">
+<h2>A difficulty in {arrow}</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb56-2"><a href="#cb56-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb56-3"><a href="#cb56-3"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span> <span class="co"># a window function!</span></span>
+<span id="cb56-4"><a href="#cb56-4"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb56-5"><a href="#cb56-5"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="an-easy-fix-with-duckdb" class="slide level2">
+<h2>An easy fix with {duckdb}</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb57-2"><a href="#cb57-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb57-3"><a href="#cb57-3"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb57-4"><a href="#cb57-4"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb57-5"><a href="#cb57-5"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb57-6"><a href="#cb57-6"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># Source:   lazy query [?? x 4]
+# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
+      id sex   species island   
+   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;    
+ 1     4 &lt;NA&gt;  Adelie  Torgersen
+ 2     9 &lt;NA&gt;  Adelie  Torgersen
+ 3    10 &lt;NA&gt;  Adelie  Torgersen
+ 4    11 &lt;NA&gt;  Adelie  Torgersen
+ 5    12 &lt;NA&gt;  Adelie  Torgersen
+ 6    48 &lt;NA&gt;  Adelie  Dream    
+ 7   179 &lt;NA&gt;  Gentoo  Biscoe   
+ 8   219 &lt;NA&gt;  Gentoo  Biscoe   
+ 9   257 &lt;NA&gt;  Gentoo  Biscoe   
+10   269 &lt;NA&gt;  Gentoo  Biscoe   
+# … with more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="numerology-example" class="slide level2">
+<h2>Numerology example</h2>
+<div class="cell" data-hash="slides_cache/revealjs/numerology_5aa28ef883b8f65ca6ba7ce4752ce1da">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1"></a><span class="fu">tic</span>()</span>
+<span id="cb59-2"><a href="#cb59-2"></a>nyc_taxi_jan <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/year=2022/month=1/"</span>)</span>
+<span id="cb59-3"><a href="#cb59-3"></a>numerology <span class="ot">&lt;-</span> nyc_taxi_jan <span class="sc">|&gt;</span></span>
+<span id="cb59-4"><a href="#cb59-4"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span>  </span>
+<span id="cb59-5"><a href="#cb59-5"></a>  <span class="fu">window_order</span>(pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb59-6"><a href="#cb59-6"></a>  <span class="fu">mutate</span>(<span class="at">trip_id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb59-7"><a href="#cb59-7"></a>  <span class="fu">filter</span>(</span>
+<span id="cb59-8"><a href="#cb59-8"></a>    trip_id <span class="sc">|&gt;</span> <span class="fu">as.character</span>() <span class="sc">|&gt;</span> <span class="fu">str_detect</span>(<span class="st">"59"</span>),</span>
+<span id="cb59-9"><a href="#cb59-9"></a>    <span class="fu">second</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span>,</span>
+<span id="cb59-10"><a href="#cb59-10"></a>    <span class="fu">minute</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span></span>
+<span id="cb59-11"><a href="#cb59-11"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb59-12"><a href="#cb59-12"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb59-13"><a href="#cb59-13"></a>    <span class="at">magic_number =</span> trip_id <span class="sc">|&gt;</span> </span>
+<span id="cb59-14"><a href="#cb59-14"></a>      <span class="fu">as.character</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb59-15"><a href="#cb59-15"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[^59]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb59-16"><a href="#cb59-16"></a>      <span class="fu">as.integer</span>()</span>
+<span id="cb59-17"><a href="#cb59-17"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb59-18"><a href="#cb59-18"></a>  <span class="fu">select</span>(trip_id, magic_number, pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb59-19"><a href="#cb59-19"></a>  <span class="fu">collect</span>()</span>
+<span id="cb59-20"><a href="#cb59-20"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.542 sec elapsed</code></pre>
+</div>
+</div>
+</section>
+<section id="numerology-example-1" class="slide level2">
+<h2>Numerology example</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1"></a>numerology</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 37 × 3
+   trip_id magic_number pickup_datetime    
+     &lt;dbl&gt;        &lt;int&gt; &lt;dttm&gt;             
+ 1   13159           59 2022-01-01 02:59:59
+ 2   39159          959 2022-01-01 15:59:59
+ 3   65940           59 2022-01-02 01:59:59
+ 4  159315          595 2022-01-03 14:59:59
+ 5  405954          595 2022-01-06 18:59:59
+ 6  405955         5955 2022-01-06 18:59:59
+ 7  487592           59 2022-01-07 21:59:59
+ 8  590708           59 2022-01-09 07:59:59
+ 9  590709          599 2022-01-09 07:59:59
+10  590710           59 2022-01-09 07:59:59
+# … with 27 more rows</code></pre>
+</div>
+</div>
 
 <div class="footer footer-default">
 <p><a href="https://arrow-user2022.netlify.app">arrow-user2022.netlify.app</a></p>
 </div>
-</section>
+</section></section>
     </div>
   </div>
 

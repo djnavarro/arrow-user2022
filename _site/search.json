@@ -481,5 +481,145 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Pickup at pi time",
     "text": "Pickup at pi time\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\nThe output is correct: hour == 3 refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)"
+  },
+  {
+    "objectID": "slides.html#penguin-data",
+    "href": "slides.html#penguin-data",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Penguin data",
+    "text": "Penguin data\n\npenguins\n\n# A tibble: 344 × 8\n   species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g\n   <fct>   <fct>              <dbl>         <dbl>             <int>       <int>\n 1 Adelie  Torgersen           39.1          18.7               181        3750\n 2 Adelie  Torgersen           39.5          17.4               186        3800\n 3 Adelie  Torgersen           40.3          18                 195        3250\n 4 Adelie  Torgersen           NA            NA                  NA          NA\n 5 Adelie  Torgersen           36.7          19.3               193        3450\n 6 Adelie  Torgersen           39.3          20.6               190        3650\n 7 Adelie  Torgersen           38.9          17.8               181        3625\n 8 Adelie  Torgersen           39.2          19.6               195        4675\n 9 Adelie  Torgersen           34.1          18.1               193        3475\n10 Adelie  Torgersen           42            20.2               190        4250\n# … with 334 more rows, and 2 more variables: sex <fct>, year <int>"
+  },
+  {
+    "objectID": "slides.html#penguin-data-an-auxiliary-table",
+    "href": "slides.html#penguin-data-an-auxiliary-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Penguin data: An auxiliary table",
+    "text": "Penguin data: An auxiliary table\n\nlocation <- arrow_table(\n  island = c(\"Torgersen\", \"Biscoe\", \"Dream\"), \n  lon = c(-64.77, -65.43, -64.73),\n  lat = c(-64.08, -65.50, -64.23)\n)  \nlocation\n\nTable\n3 rows x 3 columns\n$island <string>\n$lon <double>\n$lat <double>"
+  },
+  {
+    "objectID": "slides.html#left-joining-penguins-and-location",
+    "href": "slides.html#left-joining-penguins-and-location",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left joining penguins and location",
+    "text": "Left joining penguins and location"
+  },
+  {
+    "objectID": "slides.html#left-join-works-as-expected",
+    "href": "slides.html#left-join-works-as-expected",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left join works as expected",
+    "text": "Left join works as expected\n\npenguins |> \n  arrow_table() |>\n  left_join(location) |> \n  select(species, island, bill_length_mm, lon, lat) |>\n  collect()\n\n# A tibble: 344 × 5\n   species island    bill_length_mm   lon   lat\n   <fct>   <fct>              <dbl> <dbl> <dbl>\n 1 Adelie  Torgersen           39.1 -64.8 -64.1\n 2 Adelie  Torgersen           39.5 -64.8 -64.1\n 3 Adelie  Torgersen           40.3 -64.8 -64.1\n 4 Adelie  Torgersen           NA   -64.8 -64.1\n 5 Adelie  Torgersen           36.7 -64.8 -64.1\n 6 Adelie  Torgersen           39.3 -64.8 -64.1\n 7 Adelie  Torgersen           38.9 -64.8 -64.1\n 8 Adelie  Torgersen           39.2 -64.8 -64.1\n 9 Adelie  Torgersen           34.1 -64.8 -64.1\n10 Adelie  Torgersen           42   -64.8 -64.1\n# … with 334 more rows\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#left-joining-works-as-expected",
+    "href": "slides.html#left-joining-works-as-expected",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Left joining works as expected",
+    "text": "Left joining works as expected\n\npenguins |> \n  arrow_table() |>\n  left_join(location) |> \n  select(species, island, bill_length_mm, lon, lat) |>\n  collect()\n\n# A tibble: 344 × 5\n   species island    bill_length_mm   lon   lat\n   <fct>   <fct>              <dbl> <dbl> <dbl>\n 1 Adelie  Torgersen           39.1 -64.8 -64.1\n 2 Adelie  Torgersen           39.5 -64.8 -64.1\n 3 Adelie  Torgersen           40.3 -64.8 -64.1\n 4 Adelie  Torgersen           NA   -64.8 -64.1\n 5 Adelie  Torgersen           36.7 -64.8 -64.1\n 6 Adelie  Torgersen           39.3 -64.8 -64.1\n 7 Adelie  Torgersen           38.9 -64.8 -64.1\n 8 Adelie  Torgersen           39.2 -64.8 -64.1\n 9 Adelie  Torgersen           34.1 -64.8 -64.1\n10 Adelie  Torgersen           42   -64.8 -64.1\n# … with 334 more rows"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary",
+    "href": "slides.html#traps-for-the-unwary",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary-1",
+    "href": "slides.html#traps-for-the-unwary-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\npickup\n\n# A tibble: 265 × 2\n   pickup_location_id pickup_borough\n                <int> <chr>         \n 1                  1 EWR           \n 2                  2 Queens        \n 3                  3 Bronx         \n 4                  4 Manhattan     \n 5                  5 Staten Island \n 6                  6 Staten Island \n 7                  7 Queens        \n 8                  8 Queens        \n 9                  9 Queens        \n10                 10 Queens        \n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#traps-for-the-unwary-2",
+    "href": "slides.html#traps-for-the-unwary-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Traps for the unwary…",
+    "text": "Traps for the unwary…\n\nnyc_taxi |> \n  left_join(pickup) |>\n  collect()\n\nError in `collect()`:\n! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32"
+  },
+  {
+    "objectID": "slides.html#why-didnt-this-work",
+    "href": "slides.html#why-didnt-this-work",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Why didn’t this work?",
+    "text": "Why didn’t this work?\n\nnyc_taxi$schema\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "slides.html#why-didnt-this-work-1",
+    "href": "slides.html#why-didnt-this-work-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Why didn’t this work?",
+    "text": "Why didn’t this work?\n\narrow_table(pickup)$schema\n\nSchema\npickup_location_id: int32\npickup_borough: string"
+  },
+  {
+    "objectID": "slides.html#specifying-the-schema",
+    "href": "slides.html#specifying-the-schema",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Specifying the schema",
+    "text": "Specifying the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\nnyc_taxi_zones$schema\n\nSchema\nlocation_id: int64\nborough: string\nzone: string\nservice_zone: string\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#controlling-the-schema",
+    "href": "slides.html#controlling-the-schema",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Controlling the schema",
+    "text": "Controlling the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\nnyc_taxi_zones$schema\n\nSchema\nlocation_id: int64\nborough: string\nzone: string\nservice_zone: string"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query",
+    "href": "slides.html#fixing-the-query",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\ndropoff <- nyc_taxi_zones |> \n  select(\n    dropoff_location_id = location_id, \n    dropoff_borough = borough\n  )"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query-1",
+    "href": "slides.html#fixing-the-query-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\ntic()\nborough_counts <- nyc_taxi |> \n  left_join(pickup) |>\n  left_join(dropoff) |>\n  count(pickup_borough, dropoff_borough) |>\n  arrange(desc(n)) |>\n  collect()\ntoc()\n\n509.919 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#fixing-the-query-2",
+    "href": "slides.html#fixing-the-query-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Fixing the query",
+    "text": "Fixing the query\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough          n\n   <chr>          <chr>                <int>\n 1 <NA>           <NA>            1249152360\n 2 Manhattan      Manhattan        355850092\n 3 Queens         Manhattan         14648891\n 4 Manhattan      Queens            13186443\n 5 Manhattan      Brooklyn          11294128\n 6 Queens         Queens             7537042\n 7 Unknown        Unknown            4519763\n 8 Queens         Brooklyn           3727686\n 9 Brooklyn       Brooklyn           3566671\n10 Manhattan      Bronx              2091627\n# … with 40 more rows"
+  },
+  {
+    "objectID": "slides.html#exercise",
+    "href": "slides.html#exercise",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Exercise",
+    "text": "Exercise\nHow many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)?"
+  },
+  {
+    "objectID": "slides.html#a-difficulty-in-arrow",
+    "href": "slides.html#a-difficulty-in-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "A difficulty in {arrow}",
+    "text": "A difficulty in {arrow}\n\npenguins |> \n  arrow_table() |> \n  mutate(id = row_number()) |> # a window function!\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)"
+  },
+  {
+    "objectID": "slides.html#an-easy-fix-with-duckdb",
+    "href": "slides.html#an-easy-fix-with-duckdb",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "An easy fix with {duckdb}",
+    "text": "An easy fix with {duckdb}\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows"
+  },
+  {
+    "objectID": "slides.html#numerology-example",
+    "href": "slides.html#numerology-example",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Numerology example",
+    "text": "Numerology example\n\ntic()\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.542 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#numerology-example-1",
+    "href": "slides.html#numerology-example-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Numerology example",
+    "text": "Numerology example\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows\n\n\n\n\narrow-user2022.netlify.app"
   }
 ]

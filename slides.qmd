@@ -339,3 +339,187 @@ The output is correct: `hour == 3` refers to time stored in UTC, but the R print
 # Database joins
 
 Section 7: In which we explore two-table joins and encounter some potential traps for the unwary
+
+## Penguin data
+
+```{r show-penguins-table}
+penguins
+```
+
+## Penguin data: An auxiliary table
+
+```{r define-penguins-location}
+location <- arrow_table(
+  island = c("Torgersen", "Biscoe", "Dream"), 
+  lon = c(-64.77, -65.43, -64.73),
+  lat = c(-64.08, -65.50, -64.23)
+)  
+location
+
+```
+
+## Left joining penguins and location
+
+![](img/left-join-penguin.png)
+
+## Left joining works as expected 
+
+```{r left-join-penguin}
+penguins |> 
+  arrow_table() |>
+  left_join(location) |> 
+  select(species, island, bill_length_mm, lon, lat) |>
+  collect()
+```
+
+## Traps for the unwary...
+
+![](img/left-join-taxi.png)
+
+## Traps for the unwary...
+
+```{r pickup-zones}
+pickup <- nyc_taxi_zones |> 
+  select(
+    pickup_location_id = location_id, 
+    pickup_borough = borough
+  )
+
+pickup
+```
+
+## Traps for the unwary...
+
+```{r failed-join}
+#| error: true
+nyc_taxi |> 
+  left_join(pickup) |>
+  collect()
+```
+
+## Why didn't this work?
+
+```{r nyc-schema}
+nyc_taxi$schema
+```
+
+## Why didn't this work?
+
+```{r pickup-schema}
+arrow_table(pickup)$schema
+```
+
+## Controlling the schema
+
+```{r specifying-the-schema}
+nyc_taxi_zones <- nyc_taxi_zones |> 
+  as_arrow_table(
+    schema = schema(
+      location_id = int64(),
+      borough = utf8(), 
+      zone = utf8(),
+      service_zone = utf8()
+    )
+  )
+
+nyc_taxi_zones$schema
+```
+
+
+## Fixing the query
+
+```{r pickup-and-dropoff}
+pickup <- nyc_taxi_zones |> 
+  select(
+    pickup_location_id = location_id, 
+    pickup_borough = borough
+  )
+
+dropoff <- nyc_taxi_zones |> 
+  select(
+    dropoff_location_id = location_id, 
+    dropoff_borough = borough
+  )
+```
+
+## Fixing the query
+
+```{r fixing-the-query, cache=TRUE}
+tic()
+borough_counts <- nyc_taxi |> 
+  left_join(pickup) |>
+  left_join(dropoff) |>
+  count(pickup_borough, dropoff_borough) |>
+  arrange(desc(n)) |>
+  collect()
+toc()
+```
+
+## Fixing the query
+
+```{r borough-counts}
+borough_counts
+```
+
+## Exercise
+
+How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? 
+
+
+# Using DuckDB
+
+Section 8: In which {arrow} and {duckdb} play nicely
+
+## A difficulty in {arrow}
+
+```{r penguin-window-arrow, results='hide'}
+penguins |> 
+  arrow_table() |> 
+  mutate(id = row_number()) |> # a window function!
+  filter(is.na(sex)) |> 
+  select(id, sex, species, island)
+```  
+
+## An easy fix with {duckdb}
+
+```{r penguin-window-duckdb}
+penguins |> 
+  arrow_table() |> 
+  to_duckdb() |> 
+  mutate(id = row_number()) |>
+  filter(is.na(sex)) |> 
+  select(id, sex, species, island)
+```  
+
+## Numerology example
+
+```{r numerology, cache=TRUE}
+tic()
+nyc_taxi_jan <- open_dataset("~/Datasets/nyc-taxi/year=2022/month=1/")
+numerology <- nyc_taxi_jan |>
+  to_duckdb() |>  
+  window_order(pickup_datetime) |>
+  mutate(trip_id = row_number()) |>
+  filter(
+    trip_id |> as.character() |> str_detect("59"),
+    second(pickup_datetime) == 59,
+    minute(pickup_datetime) == 59
+  ) |> 
+  mutate(
+    magic_number = trip_id |> 
+      as.character() |> 
+      str_remove_all("[^59]") |>
+      as.integer()
+  ) |>
+  select(trip_id, magic_number, pickup_datetime) |>
+  collect()
+toc()
+```
+
+
+
+## Numerology example
+
+```{r numerology-print}
+numerology
+```
