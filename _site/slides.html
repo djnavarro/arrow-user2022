@@ -604,11 +604,290 @@ month: int32</code></pre>
 <section id="data-wrangling" class="slide level2">
 <h2>Data wrangling</h2>
 
-
-<img data-src="img/dplyr-backend.png" class="r-stretch"><div class="footer footer-default">
-<p><a href="https://arrow-user2022.netlify.app">arrow-user2022.netlify.app</a></p>
+<img data-src="img/dplyr-backend.png" class="r-stretch"></section></section>
+<section>
+<section id="data-wrangling-with-arrow" class="title-slide slide level1 center">
+<h1>Data wrangling with Arrow</h1>
+<p>Section 4: In which we explore one-table computations</p>
+</section>
+<section id="one-table-dplyr-verbs-queries" class="slide level2">
+<h2>One-table dplyr verbs: queries</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>shared_rides <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2021</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3"></a>  <span class="fu">group_by</span>(year) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    <span class="at">all_trips =</span> <span class="fu">n</span>(),</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="at">shared_trips =</span> <span class="fu">sum</span>(passenger_count <span class="sc">&gt;</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-7"><a href="#cb10-7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>  <span class="fu">mutate</span>(<span class="at">pct_shared =</span> shared_trips <span class="sc">/</span> all_trips <span class="sc">*</span> <span class="dv">100</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="one-table-dplyr-verbs-collect" class="slide level2">
+<h2>One-table dplyr verbs: <code>collect()</code></h2>
+<div class="cell" data-hash="slides_cache/revealjs/shared-rides-collect_4053e5c2143fba3179cd197bf4f0999f">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">tic</span>()</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="fu">collect</span>(shared_rides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;int&gt;        &lt;int&gt;      &lt;dbl&gt;
+1  2017 113495512     32296166       28.5
+2  2018 102797401     28796633       28.0
+3  2019  84393604     23515989       27.9
+4  2020  24647055      5837960       23.7
+5  2021  30902618      7221844       23.4</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>1.977 sec elapsed</code></pre>
+</div>
+</div>
+</section>
+<section id="mutating-multiple-columns-manually" class="slide level2">
+<h2>Mutating multiple columns, manually</h2>
+<div class="cell" data-hash="slides_cache/revealjs/multiple-mutate-manual_5929125ee96c52f10025ace5ab7e5610">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>millions <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">/</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb15-5"><a href="#cb15-5"></a>    <span class="at">all_trips =</span> <span class="fu">millions</span>(all_trips),</span>
+<span id="cb15-6"><a href="#cb15-6"></a>    <span class="at">shared_trips =</span> <span class="fu">millions</span>(shared_trips)</span>
+<span id="cb15-7"><a href="#cb15-7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;
+1  2017     113.         32.3        28.5
+2  2018     103.         28.8        28.0
+3  2019      84.4        23.5        27.9
+4  2020      24.6         5.84       23.7
+5  2021      30.9         7.22       23.4</code></pre>
+</div>
+</div>
+</section>
+<section id="arrow-does-not-understand-scoped-verbs" class="slide level2">
+<h2>Arrow does not understand scoped verbs</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>  <span class="fu">mutate_at</span>(<span class="fu">c</span>(<span class="st">"all_trips"</span>, <span class="st">"shared_trips"</span>), millions) <span class="sc">|&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in if (deparse(expr[[1]]) == name) {: the condition has length &gt; 1</code></pre>
+</div>
+</div>
+</section>
+<section id="arrow-does-not-understand-across" class="slide level2">
+<h2>Arrow does not understand <code>across()</code></h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions)) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error: Expression across(ends_with("trips"), millions) not supported in Arrow
+Call collect() first to pull data into R.</code></pre>
+</div>
+</div>
+</section>
+<section id="do-across-after-collect" class="slide level2">
+<h2>Do <code>across()</code> after <code>collect()</code></h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   year all_trips shared_trips pct_shared
+  &lt;int&gt;     &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;
+1  2017     113.         32.3        28.5
+2  2018     103.         28.8        28.0
+3  2019      84.4        23.5        27.9
+4  2020      24.6         5.84       23.7
+5  2021      30.9         7.22       23.4</code></pre>
+</div>
 </div>
 </section></section>
+<section>
+<section id="string-edits" class="title-slide slide level1 center">
+<h1>String edits</h1>
+<p>Section 5: In which {arrow} translates {stringr} code</p>
+</section>
+<section id="nyc-taxi-zones-table" class="slide level2">
+<h2>NYC taxi zones table</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb23-2"><a href="#cb23-2"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb23-4"><a href="#cb23-4"></a></span>
+<span id="cb23-5"><a href="#cb23-5"></a>nyc_taxi_zones</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 4
+   location_id borough       zone                    service_zone
+         &lt;int&gt; &lt;chr&gt;         &lt;chr&gt;                   &lt;chr&gt;       
+ 1           1 EWR           Newark Airport          EWR         
+ 2           2 Queens        Jamaica Bay             Boro Zone   
+ 3           3 Bronx         Allerton/Pelham Gardens Boro Zone   
+ 4           4 Manhattan     Alphabet City           Yellow Zone 
+ 5           5 Staten Island Arden Heights           Boro Zone   
+ 6           6 Staten Island Arrochar/Fort Wadsworth Boro Zone   
+ 7           7 Queens        Astoria                 Boro Zone   
+ 8           8 Queens        Astoria Park            Boro Zone   
+ 9           9 Queens        Auburndale              Boro Zone   
+10          10 Queens        Baisley Park            Boro Zone   
+# … with 255 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="nyc-taxi-zones-as-an-arrow-table" class="slide level2">
+<h2>NYC taxi zones as an Arrow Table</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a>nyc_taxi_zones_arrow <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(nyc_taxi_zones)</span>
+<span id="cb25-2"><a href="#cb25-2"></a>nyc_taxi_zones_arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Table
+265 rows x 4 columns
+$location_id &lt;int32&gt;
+$borough &lt;string&gt;
+$zone &lt;string&gt;
+$service_zone &lt;string&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="table-columns-are-chunked-arrays" class="slide level2">
+<h2>Table columns are (Chunked) Arrays</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a>nyc_taxi_zones_arrow<span class="sc">$</span>zone</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ChunkedArray
+[
+  [
+    "Newark Airport",
+    "Jamaica Bay",
+    "Allerton/Pelham Gardens",
+    "Alphabet City",
+    "Arden Heights",
+    "Arrochar/Fort Wadsworth",
+    "Astoria",
+    "Astoria Park",
+    "Auburndale",
+    "Baisley Park",
+    ...
+    "Williamsburg (South Side)",
+    "Windsor Terrace",
+    "Woodhaven",
+    "Woodlawn/Wakefield",
+    "Woodside",
+    "World Trade Center",
+    "Yorkville East",
+    "Yorkville West",
+    "NV",
+    null
+  ]
+]</code></pre>
+</div>
+</div>
+</section>
+<section id="tracking-the-data" class="slide level2">
+<h2>Tracking the data</h2>
+
+<img data-src="img/data-tracking.png" class="r-stretch"></section>
+<section id="string-manipulation-exercise" class="slide level2">
+<h2>String manipulation exercise</h2>
+<ul>
+<li>Remove vowels and all text after <code>/</code></li>
+<li>Count length of abbreviated strings</li>
+<li>Arrange by descending string length</li>
+</ul>
+</section>
+<section id="string-manipulation-exercise-1" class="slide level2">
+<h2>String manipulation exercise</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a>short_zones <span class="ot">&lt;-</span> nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
+<span id="cb29-2"><a href="#cb29-2"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb29-3"><a href="#cb29-3"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb29-4"><a href="#cb29-4"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb29-5"><a href="#cb29-5"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>)</span>
+<span id="cb29-6"><a href="#cb29-6"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb29-7"><a href="#cb29-7"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb29-8"><a href="#cb29-8"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb29-9"><a href="#cb29-9"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb29-10"><a href="#cb29-10"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>why use two <code>mutate()</code> calls?</li>
+<li>why use <code>str_replace_all()</code> and not <code>str_remove_all()</code></li>
+</ul>
+</section>
+<section id="string-manipulation-exercise-2" class="slide level2">
+<h2>String manipulation exercise</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a><span class="fu">collect</span>(short_zones)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 265 × 3
+   zone                         abbr_zone          abbr_zone_len
+   &lt;chr&gt;                        &lt;chr&gt;                      &lt;int&gt;
+ 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18
+ 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17
+ 3 Springfield Gardens North    SprngfldGrdnsNrth             17
+ 4 Springfield Gardens South    SprngfldGrdnsSth              16
+ 5 Washington Heights North     WshngtnHghtsNrth              16
+ 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16
+ 7 Financial District North     FnnclDstrctNrth               15
+ 8 Washington Heights South     WshngtnHghtsSth               15
+ 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15
+10 Financial District South     FnnclDstrctSth                14
+# … with 255 more rows</code></pre>
+</div>
+</div>
+</section></section>
+<section>
+<section id="dates-and-times" class="title-slide slide level1 center">
+<h1>Dates and times</h1>
+<p>Section 6: In which {arrow} translates {lubridate} code</p>
+</section>
+<section id="pickup-at-pi-time" class="slide level2">
+<h2>Pickup at pi time</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>pi_time_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2022</span>, month <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb32-3"><a href="#cb32-3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb32-4"><a href="#cb32-4"></a>    <span class="at">day =</span> <span class="fu">day</span>(pickup_datetime),</span>
+<span id="cb32-5"><a href="#cb32-5"></a>    <span class="at">weekday =</span> <span class="fu">wday</span>(pickup_datetime, <span class="at">label =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb32-6"><a href="#cb32-6"></a>    <span class="at">hour =</span> <span class="fu">hour</span>(pickup_datetime),</span>
+<span id="cb32-7"><a href="#cb32-7"></a>    <span class="at">minute =</span> <span class="fu">minute</span>(pickup_datetime),</span>
+<span id="cb32-8"><a href="#cb32-8"></a>    <span class="at">second =</span> <span class="fu">second</span>(pickup_datetime)</span>
+<span id="cb32-9"><a href="#cb32-9"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb32-10"><a href="#cb32-10"></a>  <span class="fu">filter</span>(hour <span class="sc">==</span> <span class="dv">3</span>, minute <span class="sc">==</span> <span class="dv">14</span>, second <span class="sc">==</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb32-11"><a href="#cb32-11"></a>  <span class="fu">select</span>(pickup_datetime, year, month, day, weekday)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="pickup-at-pi-time-1" class="slide level2">
+<h2>Pickup at pi time</h2>
+<div class="cell" data-hash="slides_cache/revealjs/lubridate-expression-collect_1694907c43f1080ae63aa279c61fde1c">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="fu">collect</span>(pi_time_pickups) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 5
+  pickup_datetime      year month   day weekday
+  &lt;dttm&gt;              &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;  
+1 2022-01-01 14:14:15  2022     1     1 Sat    
+2 2022-01-01 14:14:15  2022     1     1 Sat    
+3 2022-01-01 14:14:15  2022     1     1 Sat    
+4 2022-01-09 14:14:15  2022     1     9 Sun    
+5 2022-01-18 14:14:15  2022     1    18 Tue    </code></pre>
+</div>
+</div>
+<p>The output is correct: <code>hour == 3</code> refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)</p>
+</section></section>
+<section id="database-joins" class="title-slide slide level1 center">
+<h1>Database joins</h1>
+<p>Section 7: In which we explore two-table joins and encounter some potential traps for the unwary</p>
+
+<div class="footer footer-default">
+<p><a href="https://arrow-user2022.netlify.app">arrow-user2022.netlify.app</a></p>
+</div>
+</section>
     </div>
   </div>
 

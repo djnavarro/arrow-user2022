@@ -347,7 +347,7 @@
     "href": "slides.html#data-wrangling",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Data wrangling",
-    "text": "Data wrangling\n\n\n\narrow-user2022.netlify.app"
+    "text": "Data wrangling"
   },
   {
     "objectID": "slides.html#the-arrow-package-1",
@@ -355,5 +355,131 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "The {arrow} package",
     "text": "The {arrow} package\n\nRead/write functionality\nData wrangling functionality"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-queries",
+    "href": "slides.html#one-table-dplyr-verbs-queries",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table dplyr verbs: queries",
+    "text": "One-table dplyr verbs: queries\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100)"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-collect",
+    "href": "slides.html#one-table-dplyr-verbs-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table dplyr verbs: collect()",
+    "text": "One-table dplyr verbs: collect()\n\ntic()\ncollect(shared_rides)\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\ntoc()\n\n1.977 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#limitations",
+    "href": "slides.html#limitations",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Limitations",
+    "text": "Limitations\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#mutating-multiple-columns-manually",
+    "href": "slides.html#mutating-multiple-columns-manually",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Mutating multiple columns, manually",
+    "text": "Mutating multiple columns, manually\n\nmillions <- function(x) x / 10^6\n\nshared_rides |>\n  mutate(\n    all_trips = millions(all_trips),\n    shared_trips = millions(shared_trips)\n  ) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#arrow-does-not-understand-scoped-verbs",
+    "href": "slides.html#arrow-does-not-understand-scoped-verbs",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow does not understand scoped verbs",
+    "text": "Arrow does not understand scoped verbs\n\nshared_rides |>\n  mutate_at(c(\"all_trips\", \"shared_trips\"), millions) |>\n  collect()\n\nError in if (deparse(expr[[1]]) == name) {: the condition has length > 1"
+  },
+  {
+    "objectID": "slides.html#arrow-does-not-understand-across",
+    "href": "slides.html#arrow-does-not-understand-across",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Arrow does not understand across()",
+    "text": "Arrow does not understand across()\n\nshared_rides |>\n  mutate(across(ends_with(\"trips\"), millions)) |>\n  collect()\n\nError: Expression across(ends_with(\"trips\"), millions) not supported in Arrow\nCall collect() first to pull data into R."
+  },
+  {
+    "objectID": "slides.html#delaying-across-until-after-collect",
+    "href": "slides.html#delaying-across-until-after-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Delaying across() until after collect()",
+    "text": "Delaying across() until after collect()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#do-across-after-collect",
+    "href": "slides.html#do-across-after-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Do across() after collect()",
+    "text": "Do across() after collect()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-zones-table",
+    "href": "slides.html#nyc-taxi-zones-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi zones table",
+    "text": "NYC taxi zones table\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow() |>\n  clean_names()\n\nnyc_taxi_zones\n\n# A tibble: 265 × 4\n   location_id borough       zone                    service_zone\n         <int> <chr>         <chr>                   <chr>       \n 1           1 EWR           Newark Airport          EWR         \n 2           2 Queens        Jamaica Bay             Boro Zone   \n 3           3 Bronx         Allerton/Pelham Gardens Boro Zone   \n 4           4 Manhattan     Alphabet City           Yellow Zone \n 5           5 Staten Island Arden Heights           Boro Zone   \n 6           6 Staten Island Arrochar/Fort Wadsworth Boro Zone   \n 7           7 Queens        Astoria                 Boro Zone   \n 8           8 Queens        Astoria Park            Boro Zone   \n 9           9 Queens        Auburndale              Boro Zone   \n10          10 Queens        Baisley Park            Boro Zone   \n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-zones-as-an-arrow-table",
+    "href": "slides.html#nyc-taxi-zones-as-an-arrow-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi zones as an Arrow Table",
+    "text": "NYC taxi zones as an Arrow Table\n\nnyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)\nnyc_taxi_zones_arrow\n\nTable\n265 rows x 4 columns\n$location_id <int32>\n$borough <string>\n$zone <string>\n$service_zone <string>"
+  },
+  {
+    "objectID": "slides.html#columns-of-an-arrow-table",
+    "href": "slides.html#columns-of-an-arrow-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Columns of an Arrow Table",
+    "text": "Columns of an Arrow Table\n\nnyc_taxi_zones_arrow$zone\n\nChunkedArray\n[\n  [\n    \"Newark Airport\",\n    \"Jamaica Bay\",\n    \"Allerton/Pelham Gardens\",\n    \"Alphabet City\",\n    \"Arden Heights\",\n    \"Arrochar/Fort Wadsworth\",\n    \"Astoria\",\n    \"Astoria Park\",\n    \"Auburndale\",\n    \"Baisley Park\",\n    ...\n    \"Williamsburg (South Side)\",\n    \"Windsor Terrace\",\n    \"Woodhaven\",\n    \"Woodlawn/Wakefield\",\n    \"Woodside\",\n    \"World Trade Center\",\n    \"Yorkville East\",\n    \"Yorkville West\",\n    \"NV\",\n    null\n  ]\n]\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#table-columns-are-chunked-arrays",
+    "href": "slides.html#table-columns-are-chunked-arrays",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Table columns are (Chunked) Arrays",
+    "text": "Table columns are (Chunked) Arrays\n\nnyc_taxi_zones_arrow$zone\n\nChunkedArray\n[\n  [\n    \"Newark Airport\",\n    \"Jamaica Bay\",\n    \"Allerton/Pelham Gardens\",\n    \"Alphabet City\",\n    \"Arden Heights\",\n    \"Arrochar/Fort Wadsworth\",\n    \"Astoria\",\n    \"Astoria Park\",\n    \"Auburndale\",\n    \"Baisley Park\",\n    ...\n    \"Williamsburg (South Side)\",\n    \"Windsor Terrace\",\n    \"Woodhaven\",\n    \"Woodlawn/Wakefield\",\n    \"Woodside\",\n    \"World Trade Center\",\n    \"Yorkville East\",\n    \"Yorkville West\",\n    \"NV\",\n    null\n  ]\n]"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise",
+    "href": "slides.html#string-manipulation-exercise",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\nRemove vowels and all text after /\nCount length of abbreviated strings\nArrange by descending string length"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-1",
+    "href": "slides.html#string-manipulation-exercise-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-2",
+    "href": "slides.html#string-manipulation-exercise-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise",
+    "text": "String manipulation exercise\n\ncollect(short_zones)\n\n# A tibble: 265 × 3\n   zone                         abbr_zone          abbr_zone_len\n   <chr>                        <chr>                      <int>\n 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18\n 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17\n 3 Springfield Gardens North    SprngfldGrdnsNrth             17\n 4 Springfield Gardens South    SprngfldGrdnsSth              16\n 5 Washington Heights North     WshngtnHghtsNrth              16\n 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16\n 7 Financial District North     FnnclDstrctNrth               15\n 8 Washington Heights South     WshngtnHghtsSth               15\n 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15\n10 Financial District South     FnnclDstrctSth                14\n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#tracking-the-data",
+    "href": "slides.html#tracking-the-data",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Tracking the data",
+    "text": "Tracking the data"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time",
+    "href": "slides.html#pickup-at-pi-time",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time",
+    "text": "Pickup at pi time\n\npi_time_pickups <- nyc_taxi |>\n  filter(year == 2022, month == 1) |>\n  mutate(\n    day = day(pickup_datetime),\n    weekday = wday(pickup_datetime, label = TRUE),\n    hour = hour(pickup_datetime),\n    minute = minute(pickup_datetime),\n    second = second(pickup_datetime)\n  ) |> \n  filter(hour == 3, minute == 14, second == 15) |>\n  select(pickup_datetime, year, month, day, weekday)"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time-1",
+    "href": "slides.html#pickup-at-pi-time-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time",
+    "text": "Pickup at pi time\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\nThe output is correct: hour == 3 refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)"
   }
 ]

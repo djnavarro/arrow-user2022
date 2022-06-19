@@ -175,3 +175,167 @@ Section 3: In which we unpack some things
 
 ![](img/dplyr-backend.png)
 
+# Data wrangling with Arrow
+
+Section 4: In which we explore one-table computations
+
+## One-table dplyr verbs: queries
+
+```{r shared-rides-query}
+shared_rides <- nyc_taxi |>
+  filter(year %in% 2017:2021) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) 
+```
+
+## One-table dplyr verbs: `collect()`
+
+```{r shared-rides-collect, cache=TRUE}
+tic()
+collect(shared_rides)
+toc()
+```
+
+## Mutating multiple columns, manually
+
+```{r multiple-mutate-manual}
+#| cache: true
+millions <- function(x) x / 10^6
+
+shared_rides |>
+  mutate(
+    all_trips = millions(all_trips),
+    shared_trips = millions(shared_trips)
+  ) |>
+  collect()
+```
+
+## Arrow does not understand scoped verbs
+
+```{r multiple-mutate-scoped}
+#| error: true
+shared_rides |>
+  mutate_at(c("all_trips", "shared_trips"), millions) |>
+  collect()
+```
+
+## Arrow does not understand `across()`
+
+```{r multiple-mutate-across}
+#| error: true
+shared_rides |>
+  mutate(across(ends_with("trips"), millions)) |>
+  collect()
+```
+
+## Do `across()` after `collect()`
+
+```{r across-later}
+shared_rides |>
+  collect() |>
+  mutate(across(ends_with("trips"), millions))
+```
+
+# String edits
+
+Section 5: In which {arrow} translates {stringr} code
+
+
+## NYC taxi zones table
+
+```{r read-taxi-zones, message=FALSE}
+nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |> 
+  read_csv_arrow() |>
+  clean_names()
+
+nyc_taxi_zones
+```
+
+## NYC taxi zones as an Arrow Table
+
+```{r taxi-zones-arrow-table}
+nyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)
+nyc_taxi_zones_arrow
+```
+
+
+## Table columns are (Chunked) Arrays
+
+```{r taxi-zones-arrow-chunked-array}
+nyc_taxi_zones_arrow$zone
+```
+
+## Tracking the data
+
+![](img/data-tracking.png)
+
+
+## String manipulation exercise
+
+- Remove vowels and all text after `/`
+- Count length of abbreviated strings
+- Arrange by descending string length
+
+## String manipulation exercise
+
+```{r string-manipulation-arrow}
+short_zones <- nyc_taxi_zones_arrow |> 
+  mutate(
+    abbr_zone = zone |> 
+      str_replace_all("[aeiou' ]", "") |>
+      str_replace_all("/.*", "")
+  ) |>
+  mutate(
+    abbr_zone_len = str_length(abbr_zone)
+  ) |>
+  select(zone, abbr_zone, abbr_zone_len) |>
+  arrange(desc(abbr_zone_len)) 
+```
+
+- why use two `mutate()` calls?
+- why use `str_replace_all()` and not `str_remove_all()`
+
+## String manipulation exercise
+
+```{r string-manipulation-arrow-collect}
+collect(short_zones)
+```
+
+
+# Dates and times 
+
+Section 6: In which {arrow} translates {lubridate} code
+
+## Pickup at pi time
+
+```{r lubridate-expression}
+pi_time_pickups <- nyc_taxi |>
+  filter(year == 2022, month == 1) |>
+  mutate(
+    day = day(pickup_datetime),
+    weekday = wday(pickup_datetime, label = TRUE),
+    hour = hour(pickup_datetime),
+    minute = minute(pickup_datetime),
+    second = second(pickup_datetime)
+  ) |> 
+  filter(hour == 3, minute == 14, second == 15) |>
+  select(pickup_datetime, year, month, day, weekday)
+```
+
+## Pickup at pi time
+
+```{r lubridate-expression-collect}
+#| cache: true
+collect(pi_time_pickups) 
+```
+
+The output is correct: `hour == 3` refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)
+
+
+# Database joins
+
+Section 7: In which we explore two-table joins and encounter some potential traps for the unwary
