@@ -9,7 +9,7 @@ website:
   twitter-card:
     creator: "@djnavarro"
     card-style: summary_large_image
-    image: "https://arrow-user2022.netlify.app/img/social-media-image.png"
+    image: "http://arrow-user2022.netlify.app/img/social-media-image.png"
   navbar:
     background: primary
     left:
