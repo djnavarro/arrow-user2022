@@ -180,5 +180,180 @@
     "title": "Part 2: Data Wrangling with Arrow",
     "section": "Combining arrow with duckdb",
     "text": "Combining arrow with duckdb\nAt the start of the workshop we emphasized the point that Arrow aims to be a multi-language toolbox that makes it easier to connect analytics applications. Here’s an example: DuckDB.\nIf you’re not familiar with it, DuckDB is a lightweight database system designed specifically for analytics. It’s serverless, has no external dependencies, and if you want to use it with R all you have to do is install the duckdb package with install.packages(\"duckdb\"). Think of it as like SQLite, with a major exception: it’s intended to support analytics workflows (fewer queries, but computationally expensive ones) rather than transactional ones (many queries that touch only a small part of the database). For the kind of workflows a data scientist tends to engage in, it’s usually much faster than SQLite. Plus, it comes with Arrow support, and consequently the arrow and duckdb packages play very nicely together.\nHere’s how it works: First, notice DuckDB is an SQL database, and you can interact with it from R using dbplyr. Second, notice that DuckDB understands Arrow formats, so we can pass control of a dataset from the Arrow C++ library to DuckDB simply by passing pointers: there’s no copying involved. These two things together are what allow the arrow package to supply two very handy functions, to_duckdb() and to_arrow(). What these do, in effect, is allow you to switch out one engine for the other in the middle of a data analysis pipeline at almost zero cost!\n\n\n\n\n\nThis can be remarkably powerful. There are some operations that are supported by DuckDB but not currently available in the Arrow compute engine, and vice versa. So it’s easy just flip back and forth between them whenever you need to.\n(As an aside, if you’re like me this feels… wrong. Under normal circumstances you’d think it’s absurdly wasteful to completely swap out the back end engine just to get access to a couple of handy functions, but that’s because we’re all so used to a mental model in which serialization costs are pervasive. We’ve all internalized the idea that switching costs are really, really big. But in this case all we’re really doing is passing a little bit of metadata between two processes that both understand Arrow and dplyr so it’s really not a big deal)\n\nExample 7: Window functions\nOkay let’s start with a simple example that intuitively you’d think should work, and I’ll use the penguins data from the palmerpenguins package again. I’m going to add a column specifying the row number, filter out some observations, and select a few columns. Nothing fancy, and if I do it natively in R, everything works fine:\n\npenguins |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# A tibble: 11 × 4\n      id sex   species island   \n   <int> <fct> <fct>   <fct>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n11   272 <NA>  Gentoo  Biscoe   \n\n\nOkay let’s imagine I’m doing all this in Arrow. I’ll add an arrow_table() step at the top of the pipeline so that all the subsequent steps are being done using an Arrow table not an R data frame, and…\n\npenguins |> \n  arrow_table() |> \n  mutate(id = row_number()) |> # oh no!\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\nWarning: Expression row_number() not supported in Arrow; pulling data into R\n\n\n…it doesn’t work. The row_number() function is not currently understood by the Arrow back end. In fact, this is a special case of a general issue: engine supplied by the Arrow C++ library doesn’t currently support window functions, and as a consequence the arrow R package can’t do much to help. However, the DuckDB engine does support window functions, so all we have to do is pass control over to_duckdb():\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows\n\n\nIt all works now.\n\n\nExample 8: Something bigger!\nThe example you’ve just seen highlights the basic idea but it’s tiny: a 344 row data set doesn’t really need Arrow at all. So let’s scale this up a little! Let’s suppose I’m working with the NYC taxi data for January 2022 and I’ve opened it as an Arrow dataset:\n\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\n\nIt’s small relative to the full taxi data, but it’s still two and a half million rows. Large enough that to potentially cause headaches if we aren’t cautious:\n\nnyc_taxi_jan$num_rows \n\n[1] 2463879\n\n\nNow let’s give ourselves a slightly weird “numerological” task: we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, and the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a “magic number” that removes all the digits from the rank that are not 5 or 9. This would be a little tricky with arrow and dplyr alone, but not too difficult with duckdb and dbplyr:\n\ntic()\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.72 sec elapsed\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows\n\n\n\n\n\n\n\n\nResources on Arrow/DuckDB integration\n\n\n\nIf you’re interested in following up on this topic, a good place to start is with the Bigger data with arrow and duckdb slides prepared by Thomas Mock and Edgar Ruiz"
+  },
+  {
+    "objectID": "slides.html#packages",
+    "href": "slides.html#packages",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Packages",
+    "text": "Packages\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)"
+  },
+  {
+    "objectID": "slides.html#opening-a-data-set",
+    "href": "slides.html#opening-a-data-set",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Opening a data set",
+    "text": "Opening a data set\n\nnyc_taxi <- open_dataset(\"~/Datasets/nyc-taxi\")\nnyc_taxi\n\nFileSystemDataset with 158 Parquet files\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "slides.html#opening-a-data-set-1",
+    "href": "slides.html#opening-a-data-set-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Opening a data set",
+    "text": "Opening a data set\n\nnyc_taxi |>\n  head() |>\n  collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\nnyc_taxi |>\n  nrow()\n\n[1] 1672590319\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look",
+    "href": "slides.html#first-look",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look",
+    "text": "First look\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#first-look-1",
+    "href": "slides.html#first-look-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look",
+    "text": "First look\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-rows",
+    "href": "slides.html#first-look-at-the-taxi-data-rows",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: rows",
+    "text": "First look at the taxi data: rows\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-head",
+    "href": "slides.html#first-look-at-the-taxi-data-head",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: head()",
+    "text": "First look at the taxi data: head()\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#first-look-at-the-taxi-data-rrow",
+    "href": "slides.html#first-look-at-the-taxi-data-rrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "First look at the taxi data: rrow()",
+    "text": "First look at the taxi data: rrow()\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-nrow",
+    "href": "slides.html#nyc-taxi-data-nrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: nrow()",
+    "text": "NYC taxi data: nrow()\n\nnyc_taxi |> nrow()\n\n[1] 1672590319"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-head",
+    "href": "slides.html#nyc-taxi-data-head",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: head()",
+    "text": "NYC taxi data: head()\n\nnyc_taxi |> head() |> collect()\n\n# A tibble: 6 × 24\n  vendor_name pickup_datetime     dropoff_datetime    passenger_count\n  <chr>       <dttm>              <dttm>                        <int>\n1 VTS         2009-01-04 13:52:00 2009-01-04 14:02:00               1\n2 VTS         2009-01-04 14:31:00 2009-01-04 14:38:00               3\n3 VTS         2009-01-04 02:43:00 2009-01-04 02:57:00               5\n4 DDS         2009-01-02 07:52:58 2009-01-02 08:14:00               1\n5 DDS         2009-01-25 03:18:23 2009-01-25 03:24:56               1\n6 DDS         2009-01-17 09:35:59 2009-01-17 09:43:35               2\n# … with 20 more variables: trip_distance <dbl>, pickup_longitude <dbl>,\n#   pickup_latitude <dbl>, rate_code <chr>, store_and_fwd <chr>,\n#   dropoff_longitude <dbl>, dropoff_latitude <dbl>, payment_type <chr>,\n#   fare_amount <dbl>, extra <dbl>, mta_tax <dbl>, tip_amount <dbl>,\n#   tolls_amount <dbl>, total_amount <dbl>, improvement_surcharge <dbl>,\n#   congestion_surcharge <dbl>, pickup_location_id <int>,\n#   dropoff_location_id <int>, year <int>, month <int>"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-dplyr-pipeline",
+    "href": "slides.html#nyc-taxi-data-dplyr-pipeline",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: dplyr pipeline",
+    "text": "NYC taxi data: dplyr pipeline\n\nuse filter() to restrict data to 2017:2021\nuse group_by() to aggregate by year\nuse summarize() to count total and shared trips\nuse mutate() to compute percent of trips shared\nuse collect() to trigger execution"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-data-dplyr-pipeline-1",
+    "href": "slides.html#nyc-taxi-data-dplyr-pipeline-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi data: dplyr pipeline",
+    "text": "NYC taxi data: dplyr pipeline\n\nnyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) |>\n  collect()\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4"
+  },
+  {
+    "objectID": "slides.html#exercises",
+    "href": "slides.html#exercises",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Exercises",
+    "text": "Exercises\n\nCalculate total number of rides for each month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month. Sort the results in month order"
+  },
+  {
+    "objectID": "slides.html#problems",
+    "href": "slides.html#problems",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Problems",
+    "text": "Problems\n\nCalculate the total number of rides for every month in 2019\nFor each month in 2019, find the distance travelled by the longest recorded taxi ride that month and sort the results in month order\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#what-is-arrow-1",
+    "href": "slides.html#what-is-arrow-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "What is Arrow?",
+    "text": "What is Arrow?\n\nA multi-language toolbox  for accelerated data interchange  and in-memory processing"
+  },
+  {
+    "objectID": "slides.html#a-multi-language-toolbox",
+    "href": "slides.html#a-multi-language-toolbox",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "A multi-language toolbox",
+    "text": "A multi-language toolbox"
+  },
+  {
+    "objectID": "slides.html#accelerated-data-interchange",
+    "href": "slides.html#accelerated-data-interchange",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Accelerated data interchange",
+    "text": "Accelerated data interchange"
+  },
+  {
+    "objectID": "slides.html#accelerated-data-interchange-1",
+    "href": "slides.html#accelerated-data-interchange-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Accelerated data interchange",
+    "text": "Accelerated data interchange"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing",
+    "href": "slides.html#efficient-in-memory-processing",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing-1",
+    "href": "slides.html#efficient-in-memory-processing-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#efficient-in-memory-processing-2",
+    "href": "slides.html#efficient-in-memory-processing-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Efficient in-memory processing",
+    "text": "Efficient in-memory processing"
+  },
+  {
+    "objectID": "slides.html#what-is-the-arrow-package-1",
+    "href": "slides.html#what-is-the-arrow-package-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "What is the arrow package?",
+    "text": "What is the arrow package?\n\nRead/write functionality\nData wrangling functionality"
+  },
+  {
+    "objectID": "slides.html#readwrite",
+    "href": "slides.html#readwrite",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Read/write",
+    "text": "Read/write"
+  },
+  {
+    "objectID": "slides.html#data-wrangling",
+    "href": "slides.html#data-wrangling",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Data wrangling",
+    "text": "Data wrangling\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#the-arrow-package-1",
+    "href": "slides.html#the-arrow-package-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "The {arrow} package",
+    "text": "The {arrow} package\n\nRead/write functionality\nData wrangling functionality"
   }
 ]

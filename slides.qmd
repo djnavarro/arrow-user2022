@@ -1,11 +1,33 @@
 ---
 title: "Larger-Than-Memory Data Workflows with Apache Arrow"
 author: "Danielle Navarro, Jonathan Keane, Stephanie Hazlitt"
+execute:
+  echo: true
 format: 
   revealjs:
     theme: simple
     footer: "[arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)"
 ---
+
+```{r}
+#| include: false
+# save the built-in output hook
+hook_output <- knitr::knit_hooks$get("output")
+
+# set a new output hook to truncate text output
+knitr::knit_hooks$set(output = function(x, options) {
+  if (!is.null(n <- options$out.lines)) {
+    x <- xfun::split_lines(x)
+    if (length(x) > n) {
+      # truncate the output
+      x <- c(head(x, n), "...\n")
+    }
+    x <- paste(x, collapse = "\n")
+  }
+  hook_output(x, options)
+})
+```
+
 
 ## Housekeeping
 
@@ -25,4 +47,131 @@ format:
 
 # Hello Arrow
 
+Section 1: In which we dive straight into Arrow
+
+## Packages
+
+```{r packages}
+#| message: false
+#| echo: true
+library(arrow)
+library(dplyr)
+library(dbplyr)
+library(duckdb)
+library(stringr)
+library(lubridate)
+library(palmerpenguins)
+library(tictoc)
+library(scales)
+library(janitor)
+library(fs)
+library(ggplot2)
+library(ggrepel)
+library(sf)
+```
+
+## Opening a data set
+
+```{r open-dataset}
+#| echo: true
+nyc_taxi <- open_dataset("~/Datasets/nyc-taxi")
+nyc_taxi
+```
+
+## NYC taxi data: `nrow()`
+
+```{r taxi-rows}
+nyc_taxi |> nrow()
+```
+
+## NYC taxi data: `head()`
+
+```{r taxi-head}
+#| cache: true
+nyc_taxi |> head() |> collect()
+```
+
+## NYC taxi data: **dplyr** pipeline
+
+- use `filter()` to restrict data to 2017:2021
+- use `group_by()` to aggregate by `year`
+- use `summarize()` to count total and shared trips
+- use `mutate()` to compute percent of trips shared
+- use `collect()` to trigger execution
+
+## NYC taxi data: **dplyr** pipeline
+
+```{r first-dplyr-pipeline}
+#| cache: true
+nyc_taxi |>
+  filter(year %in% 2017:2021) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) |>
+  collect()
+```
+
+## Exercises
+
+1. Calculate total number of rides for each month in 2019
+2. For each month in 2019, find the distance travelled by the longest recorded taxi ride that month. Sort the results in month order
+
+
+# What is Arrow?
+
+Section 2: In which we ask "why do we care?"
+
+## What is Arrow?
+
+> A multi-language toolbox <br>
+> for accelerated data interchange <br> 
+> and in-memory processing
+
+## A multi-language toolbox
+
+![](img/arrow-libraries-structure.png)
+
+## Accelerated data interchange
+
+![](img/data-interchange-without-arrow.png)
+
+## Accelerated data interchange
+
+![](img/data-interchange-with-arrow.png)
+
+## Efficient in-memory processing
+
+![](img/tabular-data-asymmetries.png)
+
+
+
+## Efficient in-memory processing
+
+![](img/tabular-data-memory-buffers.png)
+
+
+## Efficient in-memory processing
+
+![](img/tabular-data-simd.png)
+
+# The {arrow} package
+
+Section 3: In which we unpack some things
+
+
+## The {arrow} package
+
+- Read/write functionality
+- Data wrangling functionality
+
+## Read/write
+
+![](img/arrow-read-write.png)
+
+## Data wrangling
+
+![](img/dplyr-backend.png)
 
