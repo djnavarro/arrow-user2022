@@ -543,7 +543,7 @@
     "href": "slides.html#why-didnt-this-work",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Why didn’t this work?",
-    "text": "Why didn’t this work?\n\nnyc_taxi$schema\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+    "text": "Why didn’t this work?\n\nnyc_taxi |> \n  left_join(pickup) |>\n  collect()\n\nError in `collect()`:\n! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32"
   },
   {
     "objectID": "slides.html#why-didnt-this-work-1",
@@ -571,14 +571,14 @@
     "href": "slides.html#fixing-the-query",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Fixing the query",
-    "text": "Fixing the query\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\ndropoff <- nyc_taxi_zones |> \n  select(\n    dropoff_location_id = location_id, \n    dropoff_borough = borough\n  )"
+    "text": "Fixing the query\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\ndropoff <- nyc_taxi_zones |> \n  select(\n    dropoff_location_id = location_id, \n    dropoff_borough = borough\n  )\n\n\nJoin separately for the pickup and dropoff zones"
   },
   {
     "objectID": "slides.html#fixing-the-query-1",
     "href": "slides.html#fixing-the-query-1",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Fixing the query",
-    "text": "Fixing the query\n\ntic()\nborough_counts <- nyc_taxi |> \n  left_join(pickup) |>\n  left_join(dropoff) |>\n  count(pickup_borough, dropoff_borough) |>\n  arrange(desc(n)) |>\n  collect()\ntoc()\n\n509.919 sec elapsed"
+    "text": "Fixing the query\n\ntic()\nborough_counts <- nyc_taxi |> \n  left_join(pickup) |>\n  left_join(dropoff) |>\n  count(pickup_borough, dropoff_borough) |>\n  arrange(desc(n)) |>\n  collect()\ntoc()\n\n509.919 sec elapsed\n\n\n\n8-9 minutes to join twice and cross-tabulate on non-partition variables, with 1.7 billion rows of data 🙂"
   },
   {
     "objectID": "slides.html#fixing-the-query-2",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.656 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.18 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.471 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.095 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.022 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n4.043 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.13 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -1076,5 +1076,54 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "For more infomation",
     "text": "For more infomation"
+  },
+  {
+    "objectID": "slides.html#schema-for-the-nyc_taxi-table",
+    "href": "slides.html#schema-for-the-nyc_taxi-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Schema for the nyc_taxi table",
+    "text": "Schema for the nyc_taxi table\n\nnyc_taxi$schema\n\nSchema\nvendor_name: string\npickup_datetime: timestamp[ms]\ndropoff_datetime: timestamp[ms]\npassenger_count: int64\ntrip_distance: double\npickup_longitude: double\npickup_latitude: double\nrate_code: string\nstore_and_fwd: string\ndropoff_longitude: double\ndropoff_latitude: double\npayment_type: string\nfare_amount: double\nextra: double\nmta_tax: double\ntip_amount: double\ntolls_amount: double\ntotal_amount: double\nimprovement_surcharge: double\ncongestion_surcharge: double\npickup_location_id: int64\ndropoff_location_id: int64\nyear: int32\nmonth: int32"
+  },
+  {
+    "objectID": "slides.html#schema-for-the-pickup-table",
+    "href": "slides.html#schema-for-the-pickup-table",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Schema for the pickup table",
+    "text": "Schema for the pickup table\n\narrow_table(pickup)$schema\n\nSchema\npickup_location_id: int32\npickup_borough: string\n\n\n\n\npickup_location_id is int64 in the nyc_taxi table\npickup_location_id is int32 in the pickup table"
+  },
+  {
+    "objectID": "slides.html#take-control-of-the-schema",
+    "href": "slides.html#take-control-of-the-schema",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Take control of the schema",
+    "text": "Take control of the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\n\n\nschema() takes variable name / types as input\n{arrow} has various “type” functions int64(), utf8(), boolean(), date32() etc"
+  },
+  {
+    "objectID": "slides.html#take-control-of-the-schema-1",
+    "href": "slides.html#take-control-of-the-schema-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Take control of the schema",
+    "text": "Take control of the schema\n\nnyc_taxi_zones <- nyc_taxi_zones |> \n  as_arrow_table(\n    schema = schema(\n      location_id = int64(),\n      borough = utf8(), \n      zone = utf8(),\n      service_zone = utf8()\n    )\n  )\n\nnyc_taxi_zones$schema\n\nSchema\nlocation_id: int64\nborough: string\nzone: string\nservice_zone: string"
+  },
+  {
+    "objectID": "slides.html#prepare-the-auxiliary-tables",
+    "href": "slides.html#prepare-the-auxiliary-tables",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Prepare the auxiliary tables",
+    "text": "Prepare the auxiliary tables\n\npickup <- nyc_taxi_zones |> \n  select(\n    pickup_location_id = location_id, \n    pickup_borough = borough\n  )\n\ndropoff <- nyc_taxi_zones |> \n  select(\n    dropoff_location_id = location_id, \n    dropoff_borough = borough\n  )\n\n\nJoin separately for the pickup and dropoff zones"
+  },
+  {
+    "objectID": "slides.html#join-and-cross-tabulate",
+    "href": "slides.html#join-and-cross-tabulate",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Join and cross-tabulate",
+    "text": "Join and cross-tabulate\n\ntic()\nborough_counts <- nyc_taxi |> \n  left_join(pickup) |>\n  left_join(dropoff) |>\n  count(pickup_borough, dropoff_borough) |>\n  arrange(desc(n)) |>\n  collect()\ntoc()\n\n509.919 sec elapsed\n\n\n\n8-9 minutes to join twice and cross-tabulate on non-partition variables, with 1.7 billion rows of data 🙂"
+  },
+  {
+    "objectID": "slides.html#the-results",
+    "href": "slides.html#the-results",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "The results",
+    "text": "The results\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough          n\n   <chr>          <chr>                <int>\n 1 <NA>           <NA>            1249152360\n 2 Manhattan      Manhattan        355850092\n 3 Queens         Manhattan         14648891\n 4 Manhattan      Queens            13186443\n 5 Manhattan      Brooklyn          11294128\n 6 Queens         Queens             7537042\n 7 Unknown        Unknown            4519763\n 8 Queens         Brooklyn           3727686\n 9 Brooklyn       Brooklyn           3566671\n10 Manhattan      Bronx              2091627\n# … with 40 more rows"
   }
 ]

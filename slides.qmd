@@ -462,7 +462,7 @@ pickup <- nyc_taxi_zones |>
 pickup
 ```
 
-## Traps for the unwary...
+## Why didn't this work?
 
 ```{r failed-join}
 #| error: true
@@ -471,21 +471,48 @@ nyc_taxi |>
   collect()
 ```
 
-## Why didn't this work?
+## Schema for the `nyc_taxi` table
 
 ```{r nyc-schema}
 nyc_taxi$schema
 ```
 
-## Why didn't this work?
+
+
+## Schema for the `pickup` table
 
 ```{r pickup-schema}
 arrow_table(pickup)$schema
 ```
 
-## Controlling the schema
+<br>
+
+- `pickup_location_id` is int64 in the `nyc_taxi` table
+- `pickup_location_id` is int32 in the `pickup` table
+
+## Take control of the schema
 
 ```{r specifying-the-schema}
+nyc_taxi_zones <- nyc_taxi_zones |> 
+  as_arrow_table(
+    schema = schema(
+      location_id = int64(),
+      borough = utf8(), 
+      zone = utf8(),
+      service_zone = utf8()
+    )
+  )
+```
+
+<br>
+
+- `schema()` takes variable name / types as input
+- {arrow} has various "type" functions `int64()`, `utf8()`, `boolean()`, `date32()` etc
+
+
+## Take control of the schema
+
+```{r specifying-the-schema-2}
 nyc_taxi_zones <- nyc_taxi_zones |> 
   as_arrow_table(
     schema = schema(
@@ -500,7 +527,8 @@ nyc_taxi_zones$schema
 ```
 
 
-## Fixing the query
+
+## Prepare the auxiliary tables
 
 ```{r pickup-and-dropoff}
 pickup <- nyc_taxi_zones |> 
@@ -516,7 +544,11 @@ dropoff <- nyc_taxi_zones |>
   )
 ```
 
-## Fixing the query
+<br>
+
+Join separately for the pickup and dropoff zones
+
+## Join and cross-tabulate
 
 ```{r fixing-the-query, cache=TRUE}
 tic()
@@ -529,7 +561,11 @@ borough_counts <- nyc_taxi |>
 toc()
 ```
 
-## Fixing the query
+<br>
+
+8-9 minutes to join twice and cross-tabulate on non-partition variables, with 1.7 billion rows of data 🙂
+
+## The results
 
 ```{r borough-counts}
 borough_counts
