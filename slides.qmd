@@ -31,8 +31,9 @@ knitr::knit_hooks$set(output = function(x, options) {
 
 ## Housekeeping
 
-- Website: [arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)
-    - Written tutorial, data sets, exercises
+- Written tutorial, data sets, exercises
+    - Website: [arrow-user2022.netlify.app](https://arrow-user2022.netlify.app)
+    - GitHub: [github.com/djnavarro/arrow-user2022](https://github.com/djnavarro/arrow-user2022)
 - Instructors: 
     - Danielle Navarro
     - Jonathan Keane
@@ -45,11 +46,30 @@ knitr::knit_hooks$set(output = function(x, options) {
 - Data Storage
 - Advanced Arrow
 
-# Hello Arrow
+## Oh no, I haven't installed anything!
 
-Section 1: In which we dive straight into Arrow
+```{r quickinstall, eval=FALSE}
+# download a copy of this repository
+usethis::create_from_github(
+  repo_spec = "djnavarro/arrow-user2022", 
+  destdir="<your chosen path>"
+)
 
-## Packages
+# install the package dependencies
+remotes::install_deps()
+
+# manually download and unzip the "tiny taxi" data
+download.file(
+  url = "https://github.com/djnavarro/arrow-user2022/releases/download/v0.1/nyc-taxi-tiny.zip",
+  destfile = here::here("data/nyc-taxi-tiny.zip")
+)
+unzip(
+  zipfile = here::here("data/nyc-taxi-tiny.zip"), 
+  exdir = here::here("data")
+)
+```
+
+## Just loading some R packages...
 
 ```{r packages}
 #| message: false
@@ -69,6 +89,10 @@ library(ggplot2)
 library(ggrepel)
 library(sf)
 ```
+
+# Hello Arrow
+
+Section 1: In which we dive straight into Arrow
 
 ## Opening a data set
 

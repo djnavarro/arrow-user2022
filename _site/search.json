@@ -32,7 +32,7 @@
     "href": "slides.html#housekeeping",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Housekeeping",
-    "text": "Housekeeping\n\nWebsite: arrow-user2022.netlify.app\n\nWritten tutorial, data sets, exercises\n\nInstructors:\n\nDanielle Navarro\nJonathan Keane\nStephanie Hazlitt"
+    "text": "Housekeeping\n\nWritten tutorial, data sets, exercises\n\nWebsite: arrow-user2022.netlify.app\nGitHub: github.com/djnavarro/arrow-user2022\n\nInstructors:\n\nDanielle Navarro\nJonathan Keane\nStephanie Hazlitt"
   },
   {
     "objectID": "slides.html#structure",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.473 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.104 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.495 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.11 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.515 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.013 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.755 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -852,5 +852,26 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "{arrow} brings them together",
     "text": "{arrow} brings them together\n\nthe_big_picture\n\n\n\n\narrow-user2022.netlify.app"
+  },
+  {
+    "objectID": "slides.html#oh-no-i-havent-installed-anything",
+    "href": "slides.html#oh-no-i-havent-installed-anything",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Oh no, I haven’t installed anything!",
+    "text": "Oh no, I haven’t installed anything!\n\n# download a copy of this repository\nusethis::create_from_github(\n  repo_spec = \"djnavarro/arrow-user2022\", \n  destdir=\"<your chosen path>\"\n)\n\n# install the package dependencies\nremotes::install_deps()\n\n# manually download and unzip the \"tiny taxi\" data\ndownload.file(\n  url = \"https://github.com/djnavarro/arrow-user2022/releases/download/v0.1/nyc-taxi-tiny.zip\",\n  destfile = here::here(\"data/nyc-taxi-tiny.zip\")\n)\nunzip(\n  zipfile = here::here(\"data/nyc-taxi-tiny.zip\"), \n  exdir = here::here(\"data\")\n)"
+  },
+  {
+    "objectID": "slides.html#just-loading-some-r-packages",
+    "href": "slides.html#just-loading-some-r-packages",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Just loading some R packages…",
+    "text": "Just loading some R packages…\n\nlibrary(arrow)\nlibrary(dplyr)\nlibrary(dbplyr)\nlibrary(duckdb)\nlibrary(stringr)\nlibrary(lubridate)\nlibrary(palmerpenguins)\nlibrary(tictoc)\nlibrary(scales)\nlibrary(janitor)\nlibrary(fs)\nlibrary(ggplot2)\nlibrary(ggrepel)\nlibrary(sf)"
+  },
+  {
+    "objectID": "index.html#quick-start-guide",
+    "href": "index.html#quick-start-guide",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Quick Start Guide",
+    "text": "Quick Start Guide\n\n# download a copy of this repository\nusethis::create_from_github(\n  repo_spec = \"djnavarro/arrow-user2022\", \n  destdir=\"<your chosen path>\"\n)\n\n# install the package dependencies\nremotes::install_deps()\n\n# manually download and unzip the \"tiny taxi\" data\ndownload.file(\n  url = \"https://github.com/djnavarro/arrow-user2022/releases/download/v0.1/nyc-taxi-tiny.zip\",\n  destfile = here::here(\"data/nyc-taxi-tiny.zip\")\n)\nunzip(\n  zipfile = here::here(\"data/nyc-taxi-tiny.zip\"), \n  exdir = here::here(\"data\")\n)"
   }
 ]

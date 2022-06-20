@@ -28,6 +28,29 @@ GitHub Repository: [github.com/djnavarro/arrow-user2022](https://github.com/djna
 - [3: Data Storage](data-storage.html). The third session looks in detail the read/write capabilities of **arrow**. It discusses the parquet file format, how to use it effectively for large data sets, and how to partition large data sets across many files.
 - [4: Advanced Arrow](advanced.html). The final session is brief, and takes a look under the hood. It talks about the data structures and data types used in Arrow.
 
+## Quick Start Guide
+
+```{r quickinstall, eval=FALSE}
+# download a copy of this repository
+usethis::create_from_github(
+  repo_spec = "djnavarro/arrow-user2022", 
+  destdir="<your chosen path>"
+)
+
+# install the package dependencies
+remotes::install_deps()
+
+# manually download and unzip the "tiny taxi" data
+download.file(
+  url = "https://github.com/djnavarro/arrow-user2022/releases/download/v0.1/nyc-taxi-tiny.zip",
+  destfile = here::here("data/nyc-taxi-tiny.zip")
+)
+unzip(
+  zipfile = here::here("data/nyc-taxi-tiny.zip"), 
+  exdir = here::here("data")
+)
+```
+
 ## When/Where
 
 ```{r}
