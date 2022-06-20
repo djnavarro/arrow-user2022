@@ -102,20 +102,29 @@ nyc_taxi <- open_dataset("~/Datasets/nyc-taxi")
 nyc_taxi
 ```
 
-## NYC taxi data: `nrow()`
+## NYC taxi data: Our first commands
 
-```{r taxi-rows}
-nyc_taxi |> nrow()
+- How many rows are there in our table?
+
+```{r taxi-rows, results='hide'}
+nyc_taxi |> 
+  nrow()
 ```
 
-## NYC taxi data: `head()`
+<br>
+
+- Use `head()` to extract first six rows
+- Use `collect()` to run query and return to R
 
 ```{r taxi-head}
 #| cache: true
-nyc_taxi |> head() |> collect()
+#| results: hide
+nyc_taxi |> 
+  head() |> 
+  collect()
 ```
 
-## NYC taxi data: **dplyr** pipeline
+## NYC taxi data: A {dplyr} pipeline
 
 - use `filter()` to restrict data to 2017:2021
 - use `group_by()` to aggregate by `year`
@@ -123,7 +132,7 @@ nyc_taxi |> head() |> collect()
 - use `mutate()` to compute percent of trips shared
 - use `collect()` to trigger execution
 
-## NYC taxi data: **dplyr** pipeline
+## NYC taxi data: A {dplyr} pipeline
 
 ```{r first-dplyr-pipeline}
 #| cache: true
@@ -138,7 +147,7 @@ nyc_taxi |>
   collect()
 ```
 
-## Exercises
+## [Exercises](/hello-arrow.html#exercise-hello-nyc-taxi)
 
 1. Calculate total number of rides for each month in 2019
 2. For each month in 2019, find the distance travelled by the longest recorded taxi ride that month. Sort the results in month order

@@ -107,7 +107,7 @@ nyc_taxi |>
 
 Try typing this out yourself and then have a go at the exercises! 
 
-::: {.callout-tip}
+::: {.callout-tip #exercise-hello-nyc-taxi}
 ## Exercises
 
 ::: {.panel-tabset}
