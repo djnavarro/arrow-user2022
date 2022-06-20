@@ -755,8 +755,8 @@ Call collect() first to pull data into R.</code></pre>
 <h1>String edits</h1>
 <p>Section 5: In which {arrow} translates {stringr} code</p>
 </section>
-<section id="nyc-taxi-zones-table" class="slide level2">
-<h2>NYC taxi zones table</h2>
+<section id="nyc-taxi-zones-as-a-data-frame" class="slide level2">
+<h2>NYC taxi zones, as a data frame</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
 <span id="cb24-2"><a href="#cb24-2"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span></span>
@@ -782,7 +782,7 @@ Call collect() first to pull data into R.</code></pre>
 </div>
 </section>
 <section id="nyc-taxi-zones-as-an-arrow-table" class="slide level2">
-<h2>NYC taxi zones as an Arrow Table</h2>
+<h2>NYC taxi zones, as an Arrow Table</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>nyc_taxi_zones_arrow <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(nyc_taxi_zones)</span>
 <span id="cb26-2"><a href="#cb26-2"></a>nyc_taxi_zones_arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -796,6 +796,10 @@ $service_zone &lt;string&gt;</code></pre>
 </div>
 </div>
 </section>
+<section id="wait-what-just-happened-here" class="slide level2">
+<h2>Wait, what just happened here?</h2>
+
+<img data-src="img/data-tracking.png" class="r-stretch"></section>
 <section id="table-columns-are-chunked-arrays" class="slide level2">
 <h2>Table columns are (Chunked) Arrays</h2>
 <div class="cell">
@@ -830,20 +834,23 @@ $service_zone &lt;string&gt;</code></pre>
 </div>
 </div>
 </section>
-<section id="tracking-the-data" class="slide level2">
-<h2>Tracking the data</h2>
-
-<img data-src="img/data-tracking.png" class="r-stretch"></section>
 <section id="string-manipulation-exercise" class="slide level2">
 <h2>String manipulation exercise</h2>
+<ul>
+<li>Let’s do a 1 min thought exercise:
 <ul>
 <li>Remove vowels and all text after <code>/</code></li>
 <li>Count length of abbreviated strings</li>
 <li>Arrange by descending string length</li>
+</ul></li>
+</ul>
+<p><br></p>
+<ul>
+<li>How would we do we do this in R for <code>nyc_taxi_zones</code>?</li>
 </ul>
 </section>
-<section id="string-manipulation-exercise-1" class="slide level2">
-<h2>String manipulation exercise</h2>
+<section id="string-manipulation-exercise-in-arrow" class="slide level2">
+<h2>String manipulation exercise… in Arrow</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>short_zones <span class="ot">&lt;-</span> nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
 <span id="cb30-2"><a href="#cb30-2"></a>  <span class="fu">mutate</span>(</span>
@@ -862,7 +869,7 @@ $service_zone &lt;string&gt;</code></pre>
 <li>why use <code>str_replace_all()</code> and not <code>str_remove_all()</code></li>
 </ul>
 </section>
-<section id="string-manipulation-exercise-2" class="slide level2">
+<section id="string-manipulation-exercise-1" class="slide level2">
 <h2>String manipulation exercise</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="fu">collect</span>(short_zones)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1343,7 +1350,7 @@ service_zone: string</code></pre>
 <span id="cb68-4"><a href="#cb68-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb68-5"><a href="#cb68-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.507 sec elapsed</code></pre>
+<pre><code>0.613 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1"></a><span class="fu">tic</span>()</span>
 <span id="cb70-2"><a href="#cb70-2"></a>parquet_file <span class="sc">|&gt;</span></span>
@@ -1351,7 +1358,7 @@ service_zone: string</code></pre>
 <span id="cb70-4"><a href="#cb70-4"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb70-5"><a href="#cb70-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.09 sec elapsed</code></pre>
+<pre><code>0.147 sec elapsed</code></pre>
 </div>
 </div>
 </section></section>
@@ -1538,7 +1545,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.012 sec elapsed</code></pre>
+<pre><code>0.019 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb78"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1"></a><span class="fu">tic</span>()</span>
 <span id="cb78-2"><a href="#cb78-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
@@ -1549,7 +1556,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2.711 sec elapsed</code></pre>
+<pre><code>3.82 sec elapsed</code></pre>
 </div>
 </div>
 </section>

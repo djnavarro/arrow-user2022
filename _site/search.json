@@ -423,8 +423,8 @@
     "objectID": "slides.html#nyc-taxi-zones-as-an-arrow-table",
     "href": "slides.html#nyc-taxi-zones-as-an-arrow-table",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
-    "section": "NYC taxi zones as an Arrow Table",
-    "text": "NYC taxi zones as an Arrow Table\n\nnyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)\nnyc_taxi_zones_arrow\n\nTable\n265 rows x 4 columns\n$location_id <int32>\n$borough <string>\n$zone <string>\n$service_zone <string>"
+    "section": "NYC taxi zones, as an Arrow Table",
+    "text": "NYC taxi zones, as an Arrow Table\n\nnyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)\nnyc_taxi_zones_arrow\n\nTable\n265 rows x 4 columns\n$location_id <int32>\n$borough <string>\n$zone <string>\n$service_zone <string>"
   },
   {
     "objectID": "slides.html#columns-of-an-arrow-table",
@@ -445,14 +445,14 @@
     "href": "slides.html#string-manipulation-exercise",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "String manipulation exercise",
-    "text": "String manipulation exercise\n\nRemove vowels and all text after /\nCount length of abbreviated strings\nArrange by descending string length"
+    "text": "String manipulation exercise\n\nLet’s do a 1 min thought exercise:\n\nRemove vowels and all text after /\nCount length of abbreviated strings\nArrange by descending string length\n\n\n\n\nHow would we do we do this in R for nyc_taxi_zones?"
   },
   {
     "objectID": "slides.html#string-manipulation-exercise-1",
     "href": "slides.html#string-manipulation-exercise-1",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "String manipulation exercise",
-    "text": "String manipulation exercise\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
+    "text": "String manipulation exercise\n\ncollect(short_zones)\n\n# A tibble: 265 × 3\n   zone                         abbr_zone          abbr_zone_len\n   <chr>                        <chr>                      <int>\n 1 Prospect-Lefferts Gardens    Prspct-LffrtsGrdns            18\n 2 Flushing Meadows-Corona Park FlshngMdws-CrnPrk             17\n 3 Springfield Gardens North    SprngfldGrdnsNrth             17\n 4 Springfield Gardens South    SprngfldGrdnsSth              16\n 5 Washington Heights North     WshngtnHghtsNrth              16\n 6 Williamsburg (North Side)    Wllmsbrg(NrthSd)              16\n 7 Financial District North     FnnclDstrctNrth               15\n 8 Washington Heights South     WshngtnHghtsSth               15\n 9 Williamsburg (South Side)    Wllmsbrg(SthSd)               15\n10 Financial District South     FnnclDstrctSth                14\n# … with 255 more rows"
   },
   {
     "objectID": "slides.html#string-manipulation-exercise-2",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.507 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.09 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.613 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.147 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.711 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.019 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.82 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -1006,5 +1006,33 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Call collect(), then across()",
     "text": "Call collect(), then across()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#nyc-taxi-zones-as-a-data-frame",
+    "href": "slides.html#nyc-taxi-zones-as-a-data-frame",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "NYC taxi zones, as a data frame",
+    "text": "NYC taxi zones, as a data frame\n\nnyc_taxi_zones <- \"data/taxi_zone_lookup.csv\" |> \n  read_csv_arrow() |>\n  clean_names()\n\nnyc_taxi_zones\n\n# A tibble: 265 × 4\n   location_id borough       zone                    service_zone\n         <int> <chr>         <chr>                   <chr>       \n 1           1 EWR           Newark Airport          EWR         \n 2           2 Queens        Jamaica Bay             Boro Zone   \n 3           3 Bronx         Allerton/Pelham Gardens Boro Zone   \n 4           4 Manhattan     Alphabet City           Yellow Zone \n 5           5 Staten Island Arden Heights           Boro Zone   \n 6           6 Staten Island Arrochar/Fort Wadsworth Boro Zone   \n 7           7 Queens        Astoria                 Boro Zone   \n 8           8 Queens        Astoria Park            Boro Zone   \n 9           9 Queens        Auburndale              Boro Zone   \n10          10 Queens        Baisley Park            Boro Zone   \n# … with 255 more rows"
+  },
+  {
+    "objectID": "slides.html#wait-what-just-happened-here",
+    "href": "slides.html#wait-what-just-happened-here",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Wait, what just happened here?",
+    "text": "Wait, what just happened here?"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-solution",
+    "href": "slides.html#string-manipulation-exercise-solution",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise: solution",
+    "text": "String manipulation exercise: solution\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
+  },
+  {
+    "objectID": "slides.html#string-manipulation-exercise-in-arrow",
+    "href": "slides.html#string-manipulation-exercise-in-arrow",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "String manipulation exercise… in Arrow",
+    "text": "String manipulation exercise… in Arrow\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
   }
 ]

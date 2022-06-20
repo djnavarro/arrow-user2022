@@ -298,7 +298,7 @@ shared_rides |>
 Section 5: In which {arrow} translates {stringr} code
 
 
-## NYC taxi zones table
+## NYC taxi zones, as a data frame
 
 ```{r read-taxi-zones, message=FALSE}
 nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |> 
@@ -308,12 +308,17 @@ nyc_taxi_zones <- "data/taxi_zone_lookup.csv" |>
 nyc_taxi_zones
 ```
 
-## NYC taxi zones as an Arrow Table
+## NYC taxi zones, as an Arrow Table
 
 ```{r taxi-zones-arrow-table}
 nyc_taxi_zones_arrow <- arrow_table(nyc_taxi_zones)
 nyc_taxi_zones_arrow
 ```
+
+## Wait, what just happened here?
+
+![](img/data-tracking.png)
+
 
 
 ## Table columns are (Chunked) Arrays
@@ -322,18 +327,19 @@ nyc_taxi_zones_arrow
 nyc_taxi_zones_arrow$zone
 ```
 
-## Tracking the data
-
-![](img/data-tracking.png)
-
 
 ## String manipulation exercise
 
-- Remove vowels and all text after `/`
-- Count length of abbreviated strings
-- Arrange by descending string length
+- Let's do a 1 min thought exercise:
+  - Remove vowels and all text after `/`
+  - Count length of abbreviated strings
+  - Arrange by descending string length
+  
+<br>
+  
+- How would we do we do this in R for `nyc_taxi_zones`?
 
-## String manipulation exercise
+## String manipulation exercise... in Arrow
 
 ```{r string-manipulation-arrow}
 short_zones <- nyc_taxi_zones_arrow |> 
