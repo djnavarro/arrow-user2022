@@ -688,7 +688,7 @@ nyc_taxi_2019_09 <- read_parquet(parquet_file)
 nyc_taxi_2019_09
 ```
 
-## Reading parquet files
+## Reading parquet files selectively
 
 ```{r selective-parquet-read}
 parquet_file |>
@@ -697,19 +697,27 @@ parquet_file |>
 
 ## Selective reads are faster
 
-```{r timing-parquet-reads}
+```{r timing-parquet-reads-1}
 tic()
 parquet_file |>
   read_parquet() |>
   invisible() # suppress printing
 toc()
+```
 
+<br>
+
+```{r timing-parquet-reads-2}
 tic()
 parquet_file |>
   read_parquet(col_select = matches("pickup")) |>
   invisible()
 toc()
 ```
+
+## [Exercises](#exercise-parquet)
+
+![](img/parquet-exercises.png)
 
 
 # Multi-file datasets

@@ -122,7 +122,7 @@ toc()
 
 This property is handy when dealing with larger-than-memory data: because we can't load the whole thing into memory, we're going to have to iteratively read small pieces of the data set. In the next section we'll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we're loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.
 
-::: {.callout-tip}
+::: {.callout-tip #exercise-parquet}
 ## Exercises
 
 ::: {.panel-tabset}

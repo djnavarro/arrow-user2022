@@ -1392,8 +1392,8 @@ service_zone: string</code></pre>
 </div>
 </div>
 </section>
-<section id="reading-parquet-files-1" class="slide level2">
-<h2>Reading parquet files</h2>
+<section id="reading-parquet-files-selectively" class="slide level2">
+<h2>Reading parquet files selectively</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1"></a>parquet_file <span class="sc">|&gt;</span></span>
 <span id="cb70-2"><a href="#cb70-2"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1424,18 +1424,25 @@ service_zone: string</code></pre>
 <span id="cb72-4"><a href="#cb72-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb72-5"><a href="#cb72-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.484 sec elapsed</code></pre>
+<pre><code>0.509 sec elapsed</code></pre>
 </div>
+</div>
+<p><br></p>
+<div class="cell">
 <div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1"></a><span class="fu">tic</span>()</span>
 <span id="cb74-2"><a href="#cb74-2"></a>parquet_file <span class="sc">|&gt;</span></span>
 <span id="cb74-3"><a href="#cb74-3"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb74-4"><a href="#cb74-4"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb74-5"><a href="#cb74-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.099 sec elapsed</code></pre>
+<pre><code>0.102 sec elapsed</code></pre>
 </div>
 </div>
-</section></section>
+</section>
+<section id="exercises-1" class="slide level2">
+<h2><a href="#/exercise-parquet">Exercises</a></h2>
+
+<img data-src="img/parquet-exercises.png" class="r-stretch"></section></section>
 <section>
 <section id="multi-file-datasets" class="title-slide slide level1 center">
 <h1>Multi-file datasets</h1>
@@ -1619,7 +1626,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.012 sec elapsed</code></pre>
+<pre><code>0.013 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb82"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1"></a><span class="fu">tic</span>()</span>
 <span id="cb82-2"><a href="#cb82-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
@@ -1630,7 +1637,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb84"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>3.03 sec elapsed</code></pre>
+<pre><code>2.667 sec elapsed</code></pre>
 </div>
 </div>
 </section>
