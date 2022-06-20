@@ -621,8 +621,8 @@ month: int32</code></pre>
 <h1>Data wrangling with Arrow</h1>
 <p>Section 4: In which we explore one-table computations</p>
 </section>
-<section id="one-table-dplyr-verbs-queries" class="slide level2">
-<h2>One-table dplyr verbs: queries</h2>
+<section id="familiar-one-table-dplyr-verbs" class="slide level2">
+<h2>Familiar one-table {dplyr} verbs!</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>shared_rides <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2021</span>) <span class="sc">|&gt;</span> </span>
@@ -634,11 +634,42 @@ month: int32</code></pre>
 <span id="cb9-8"><a href="#cb9-8"></a>  <span class="fu">mutate</span>(<span class="at">pct_shared =</span> shared_trips <span class="sc">/</span> all_trips <span class="sc">*</span> <span class="dv">100</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="one-table-dplyr-verbs-collect" class="slide level2">
-<h2>One-table dplyr verbs: <code>collect()</code></h2>
+<section id="the-output-is-a-query" class="slide level2">
+<h2>The output is a query</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>shared_rides <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="dv">2017</span><span class="sc">:</span><span class="dv">2021</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3"></a>  <span class="fu">group_by</span>(year) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    <span class="at">all_trips =</span> <span class="fu">n</span>(),</span>
+<span id="cb10-6"><a href="#cb10-6"></a>    <span class="at">shared_trips =</span> <span class="fu">sum</span>(passenger_count <span class="sc">&gt;</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-7"><a href="#cb10-7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a>  <span class="fu">mutate</span>(<span class="at">pct_shared =</span> shared_trips <span class="sc">/</span> all_trips <span class="sc">*</span> <span class="dv">100</span>) </span>
+<span id="cb10-9"><a href="#cb10-9"></a></span>
+<span id="cb10-10"><a href="#cb10-10"></a>shared_rides</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>FileSystemDataset (query)
+year: int32
+all_trips: int32
+shared_trips: bool
+pct_shared: double (multiply_checked(divide(cast(shared_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), cast(all_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false})), 100))
+
+See $.data for the source Arrow object</code></pre>
+</div>
+</div>
+</section>
+<section id="to-collect-or-to-compute" class="slide level2">
+<h2>To <code>collect()</code> or to <code>compute()</code>?</h2>
+<ul>
+<li><code>compute()</code> evaluates the query, output stays in Arrow</li>
+<li><code>collect()</code> evaluates the query, output returns to R</li>
+</ul>
+</section>
+<section id="using-collect" class="slide level2">
+<h2>Using <code>collect()</code></h2>
 <div class="cell" data-hash="slides_cache/revealjs/shared-rides-collect_4053e5c2143fba3179cd197bf4f0999f">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="fu">tic</span>()</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="fu">collect</span>(shared_rides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="fu">tic</span>()</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="fu">collect</span>(shared_rides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 4
    year all_trips shared_trips pct_shared
@@ -649,7 +680,7 @@ month: int32</code></pre>
 4  2020  24647055      5837960       23.7
 5  2021  30902618      7221844       23.4</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>1.977 sec elapsed</code></pre>
 </div>
@@ -658,14 +689,14 @@ month: int32</code></pre>
 <section id="mutating-multiple-columns-manually" class="slide level2">
 <h2>Mutating multiple columns, manually</h2>
 <div class="cell" data-hash="slides_cache/revealjs/multiple-mutate-manual_5929125ee96c52f10025ace5ab7e5610">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a>millions <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">/</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a></span>
-<span id="cb14-3"><a href="#cb14-3"></a>shared_rides <span class="sc">|&gt;</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb14-5"><a href="#cb14-5"></a>    <span class="at">all_trips =</span> <span class="fu">millions</span>(all_trips),</span>
-<span id="cb14-6"><a href="#cb14-6"></a>    <span class="at">shared_trips =</span> <span class="fu">millions</span>(shared_trips)</span>
-<span id="cb14-7"><a href="#cb14-7"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb14-8"><a href="#cb14-8"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>millions <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">/</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="at">all_trips =</span> <span class="fu">millions</span>(all_trips),</span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="at">shared_trips =</span> <span class="fu">millions</span>(shared_trips)</span>
+<span id="cb16-7"><a href="#cb16-7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 4
    year all_trips shared_trips pct_shared
@@ -681,9 +712,9 @@ month: int32</code></pre>
 <section id="arrow-does-not-understand-scoped-verbs" class="slide level2">
 <h2>Arrow does not understand scoped verbs</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>shared_rides <span class="sc">|&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>  <span class="fu">mutate_at</span>(<span class="fu">c</span>(<span class="st">"all_trips"</span>, <span class="st">"shared_trips"</span>), millions) <span class="sc">|&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  <span class="fu">mutate_at</span>(<span class="fu">c</span>(<span class="st">"all_trips"</span>, <span class="st">"shared_trips"</span>), millions) <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
 <pre><code>Error in if (deparse(expr[[1]]) == name) {: the condition has length &gt; 1</code></pre>
 </div>
@@ -692,21 +723,21 @@ month: int32</code></pre>
 <section id="arrow-does-not-understand-across" class="slide level2">
 <h2>Arrow does not understand <code>across()</code></h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>shared_rides <span class="sc">|&gt;</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions)) <span class="sc">|&gt;</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions)) <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
 <pre><code>Error: Expression across(ends_with("trips"), millions) not supported in Arrow
 Call collect() first to pull data into R.</code></pre>
 </div>
 </div>
 </section>
-<section id="do-across-after-collect" class="slide level2">
-<h2>Do <code>across()</code> after <code>collect()</code></h2>
+<section id="call-collect-then-across" class="slide level2">
+<h2>Call <code>collect()</code>, then <code>across()</code></h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>shared_rides <span class="sc">|&gt;</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>shared_rides <span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">ends_with</span>(<span class="st">"trips"</span>), millions))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 4
    year all_trips shared_trips pct_shared
@@ -727,11 +758,11 @@ Call collect() first to pull data into R.</code></pre>
 <section id="nyc-taxi-zones-table" class="slide level2">
 <h2>NYC taxi zones table</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
-<span id="cb22-2"><a href="#cb22-2"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb22-4"><a href="#cb22-4"></a></span>
-<span id="cb22-5"><a href="#cb22-5"></a>nyc_taxi_zones</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb24-2"><a href="#cb24-2"></a>  <span class="fu">read_csv_arrow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb24-3"><a href="#cb24-3"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb24-4"><a href="#cb24-4"></a></span>
+<span id="cb24-5"><a href="#cb24-5"></a>nyc_taxi_zones</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 265 × 4
    location_id borough       zone                    service_zone
@@ -753,8 +784,8 @@ Call collect() first to pull data into R.</code></pre>
 <section id="nyc-taxi-zones-as-an-arrow-table" class="slide level2">
 <h2>NYC taxi zones as an Arrow Table</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>nyc_taxi_zones_arrow <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(nyc_taxi_zones)</span>
-<span id="cb24-2"><a href="#cb24-2"></a>nyc_taxi_zones_arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>nyc_taxi_zones_arrow <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(nyc_taxi_zones)</span>
+<span id="cb26-2"><a href="#cb26-2"></a>nyc_taxi_zones_arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Table
 265 rows x 4 columns
@@ -768,7 +799,7 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="table-columns-are-chunked-arrays" class="slide level2">
 <h2>Table columns are (Chunked) Arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>nyc_taxi_zones_arrow<span class="sc">$</span>zone</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>nyc_taxi_zones_arrow<span class="sc">$</span>zone</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>ChunkedArray
 [
@@ -814,17 +845,17 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="string-manipulation-exercise-1" class="slide level2">
 <h2>String manipulation exercise</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>short_zones <span class="ot">&lt;-</span> nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
-<span id="cb28-2"><a href="#cb28-2"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb28-3"><a href="#cb28-3"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
-<span id="cb28-4"><a href="#cb28-4"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
-<span id="cb28-5"><a href="#cb28-5"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>)</span>
-<span id="cb28-6"><a href="#cb28-6"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb28-7"><a href="#cb28-7"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb28-8"><a href="#cb28-8"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
-<span id="cb28-9"><a href="#cb28-9"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb28-10"><a href="#cb28-10"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
-<span id="cb28-11"><a href="#cb28-11"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>short_zones <span class="ot">&lt;-</span> nyc_taxi_zones_arrow <span class="sc">|&gt;</span> </span>
+<span id="cb30-2"><a href="#cb30-2"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-3"><a href="#cb30-3"></a>    <span class="at">abbr_zone =</span> zone <span class="sc">|&gt;</span> </span>
+<span id="cb30-4"><a href="#cb30-4"></a>      <span class="fu">str_replace_all</span>(<span class="st">"[aeiou' ]"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a>      <span class="fu">str_replace_all</span>(<span class="st">"/.*"</span>, <span class="st">""</span>)</span>
+<span id="cb30-6"><a href="#cb30-6"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-8"><a href="#cb30-8"></a>    <span class="at">abbr_zone_len =</span> <span class="fu">str_length</span>(abbr_zone)</span>
+<span id="cb30-9"><a href="#cb30-9"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-10"><a href="#cb30-10"></a>  <span class="fu">select</span>(zone, abbr_zone, abbr_zone_len) <span class="sc">|&gt;</span></span>
+<span id="cb30-11"><a href="#cb30-11"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(abbr_zone_len)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ul>
 <li>why use two <code>mutate()</code> calls?</li>
@@ -834,7 +865,7 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="string-manipulation-exercise-2" class="slide level2">
 <h2>String manipulation exercise</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="fu">collect</span>(short_zones)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="fu">collect</span>(short_zones)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 265 × 3
    zone                         abbr_zone          abbr_zone_len
@@ -861,23 +892,23 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="pickup-at-pi-time" class="slide level2">
 <h2>Pickup at pi time</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a>pi_time_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2022</span>, month <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb31-3"><a href="#cb31-3"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb31-4"><a href="#cb31-4"></a>    <span class="at">day =</span> <span class="fu">day</span>(pickup_datetime),</span>
-<span id="cb31-5"><a href="#cb31-5"></a>    <span class="at">weekday =</span> <span class="fu">wday</span>(pickup_datetime, <span class="at">label =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb31-6"><a href="#cb31-6"></a>    <span class="at">hour =</span> <span class="fu">hour</span>(pickup_datetime),</span>
-<span id="cb31-7"><a href="#cb31-7"></a>    <span class="at">minute =</span> <span class="fu">minute</span>(pickup_datetime),</span>
-<span id="cb31-8"><a href="#cb31-8"></a>    <span class="at">second =</span> <span class="fu">second</span>(pickup_datetime)</span>
-<span id="cb31-9"><a href="#cb31-9"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb31-10"><a href="#cb31-10"></a>  <span class="fu">filter</span>(hour <span class="sc">==</span> <span class="dv">3</span>, minute <span class="sc">==</span> <span class="dv">14</span>, second <span class="sc">==</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
-<span id="cb31-11"><a href="#cb31-11"></a>  <span class="fu">select</span>(pickup_datetime, year, month, day, weekday)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a>pi_time_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2022</span>, month <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb33-3"><a href="#cb33-3"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb33-4"><a href="#cb33-4"></a>    <span class="at">day =</span> <span class="fu">day</span>(pickup_datetime),</span>
+<span id="cb33-5"><a href="#cb33-5"></a>    <span class="at">weekday =</span> <span class="fu">wday</span>(pickup_datetime, <span class="at">label =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb33-6"><a href="#cb33-6"></a>    <span class="at">hour =</span> <span class="fu">hour</span>(pickup_datetime),</span>
+<span id="cb33-7"><a href="#cb33-7"></a>    <span class="at">minute =</span> <span class="fu">minute</span>(pickup_datetime),</span>
+<span id="cb33-8"><a href="#cb33-8"></a>    <span class="at">second =</span> <span class="fu">second</span>(pickup_datetime)</span>
+<span id="cb33-9"><a href="#cb33-9"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb33-10"><a href="#cb33-10"></a>  <span class="fu">filter</span>(hour <span class="sc">==</span> <span class="dv">3</span>, minute <span class="sc">==</span> <span class="dv">14</span>, second <span class="sc">==</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb33-11"><a href="#cb33-11"></a>  <span class="fu">select</span>(pickup_datetime, year, month, day, weekday)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="pickup-at-pi-time-1" class="slide level2">
 <h2>Pickup at pi time</h2>
 <div class="cell" data-hash="slides_cache/revealjs/lubridate-expression-collect_1694907c43f1080ae63aa279c61fde1c">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="fu">collect</span>(pi_time_pickups) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a><span class="fu">collect</span>(pi_time_pickups) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 5
   pickup_datetime      year month   day weekday
@@ -899,7 +930,7 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="penguin-data" class="slide level2">
 <h2>Penguin data</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>penguins</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>penguins</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 344 × 8
    species island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g
@@ -921,12 +952,12 @@ $service_zone &lt;string&gt;</code></pre>
 <section id="penguin-data-an-auxiliary-table" class="slide level2">
 <h2>Penguin data: An auxiliary table</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>location <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
-<span id="cb36-2"><a href="#cb36-2"></a>  <span class="at">island =</span> <span class="fu">c</span>(<span class="st">"Torgersen"</span>, <span class="st">"Biscoe"</span>, <span class="st">"Dream"</span>), </span>
-<span id="cb36-3"><a href="#cb36-3"></a>  <span class="at">lon =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.77</span>, <span class="sc">-</span><span class="fl">65.43</span>, <span class="sc">-</span><span class="fl">64.73</span>),</span>
-<span id="cb36-4"><a href="#cb36-4"></a>  <span class="at">lat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.08</span>, <span class="sc">-</span><span class="fl">65.50</span>, <span class="sc">-</span><span class="fl">64.23</span>)</span>
-<span id="cb36-5"><a href="#cb36-5"></a>)  </span>
-<span id="cb36-6"><a href="#cb36-6"></a>location</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>location <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  <span class="at">island =</span> <span class="fu">c</span>(<span class="st">"Torgersen"</span>, <span class="st">"Biscoe"</span>, <span class="st">"Dream"</span>), </span>
+<span id="cb38-3"><a href="#cb38-3"></a>  <span class="at">lon =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.77</span>, <span class="sc">-</span><span class="fl">65.43</span>, <span class="sc">-</span><span class="fl">64.73</span>),</span>
+<span id="cb38-4"><a href="#cb38-4"></a>  <span class="at">lat =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">64.08</span>, <span class="sc">-</span><span class="fl">65.50</span>, <span class="sc">-</span><span class="fl">64.23</span>)</span>
+<span id="cb38-5"><a href="#cb38-5"></a>)  </span>
+<span id="cb38-6"><a href="#cb38-6"></a>location</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Table
 3 rows x 3 columns
@@ -943,11 +974,11 @@ $lat &lt;double&gt;</code></pre>
 <section id="left-joining-works-as-expected" class="slide level2">
 <h2>Left joining works as expected</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>penguins <span class="sc">|&gt;</span> </span>
-<span id="cb38-2"><a href="#cb38-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span></span>
-<span id="cb38-3"><a href="#cb38-3"></a>  <span class="fu">left_join</span>(location) <span class="sc">|&gt;</span> </span>
-<span id="cb38-4"><a href="#cb38-4"></a>  <span class="fu">select</span>(species, island, bill_length_mm, lon, lat) <span class="sc">|&gt;</span></span>
-<span id="cb38-5"><a href="#cb38-5"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb40-2"><a href="#cb40-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb40-3"><a href="#cb40-3"></a>  <span class="fu">left_join</span>(location) <span class="sc">|&gt;</span> </span>
+<span id="cb40-4"><a href="#cb40-4"></a>  <span class="fu">select</span>(species, island, bill_length_mm, lon, lat) <span class="sc">|&gt;</span></span>
+<span id="cb40-5"><a href="#cb40-5"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 344 × 5
    species island    bill_length_mm   lon   lat
@@ -973,13 +1004,13 @@ $lat &lt;double&gt;</code></pre>
 <section id="traps-for-the-unwary-1" class="slide level2">
 <h2>Traps for the unwary…</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
-<span id="cb40-2"><a href="#cb40-2"></a>  <span class="fu">select</span>(</span>
-<span id="cb40-3"><a href="#cb40-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
-<span id="cb40-4"><a href="#cb40-4"></a>    <span class="at">pickup_borough =</span> borough</span>
-<span id="cb40-5"><a href="#cb40-5"></a>  )</span>
-<span id="cb40-6"><a href="#cb40-6"></a></span>
-<span id="cb40-7"><a href="#cb40-7"></a>pickup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb42-2"><a href="#cb42-2"></a>  <span class="fu">select</span>(</span>
+<span id="cb42-3"><a href="#cb42-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb42-4"><a href="#cb42-4"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb42-5"><a href="#cb42-5"></a>  )</span>
+<span id="cb42-6"><a href="#cb42-6"></a></span>
+<span id="cb42-7"><a href="#cb42-7"></a>pickup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 265 × 2
    pickup_location_id pickup_borough
@@ -1001,9 +1032,9 @@ $lat &lt;double&gt;</code></pre>
 <section id="traps-for-the-unwary-2" class="slide level2">
 <h2>Traps for the unwary…</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
-<span id="cb42-2"><a href="#cb42-2"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
-<span id="cb42-3"><a href="#cb42-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb44-2"><a href="#cb44-2"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb44-3"><a href="#cb44-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
 <pre><code>Error in `collect()`:
 ! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32</code></pre>
@@ -1013,7 +1044,7 @@ $lat &lt;double&gt;</code></pre>
 <section id="why-didnt-this-work" class="slide level2">
 <h2>Why didn’t this work?</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a>nyc_taxi<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a>nyc_taxi<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Schema
 vendor_name: string
@@ -1046,7 +1077,7 @@ month: int32</code></pre>
 <section id="why-didnt-this-work-1" class="slide level2">
 <h2>Why didn’t this work?</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a><span class="fu">arrow_table</span>(pickup)<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a><span class="fu">arrow_table</span>(pickup)<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Schema
 pickup_location_id: int32
@@ -1057,17 +1088,17 @@ pickup_borough: string</code></pre>
 <section id="controlling-the-schema" class="slide level2">
 <h2>Controlling the schema</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
-<span id="cb48-2"><a href="#cb48-2"></a>  <span class="fu">as_arrow_table</span>(</span>
-<span id="cb48-3"><a href="#cb48-3"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
-<span id="cb48-4"><a href="#cb48-4"></a>      <span class="at">location_id =</span> <span class="fu">int64</span>(),</span>
-<span id="cb48-5"><a href="#cb48-5"></a>      <span class="at">borough =</span> <span class="fu">utf8</span>(), </span>
-<span id="cb48-6"><a href="#cb48-6"></a>      <span class="at">zone =</span> <span class="fu">utf8</span>(),</span>
-<span id="cb48-7"><a href="#cb48-7"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
-<span id="cb48-8"><a href="#cb48-8"></a>    )</span>
-<span id="cb48-9"><a href="#cb48-9"></a>  )</span>
-<span id="cb48-10"><a href="#cb48-10"></a></span>
-<span id="cb48-11"><a href="#cb48-11"></a>nyc_taxi_zones<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb50-2"><a href="#cb50-2"></a>  <span class="fu">as_arrow_table</span>(</span>
+<span id="cb50-3"><a href="#cb50-3"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
+<span id="cb50-4"><a href="#cb50-4"></a>      <span class="at">location_id =</span> <span class="fu">int64</span>(),</span>
+<span id="cb50-5"><a href="#cb50-5"></a>      <span class="at">borough =</span> <span class="fu">utf8</span>(), </span>
+<span id="cb50-6"><a href="#cb50-6"></a>      <span class="at">zone =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb50-7"><a href="#cb50-7"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
+<span id="cb50-8"><a href="#cb50-8"></a>    )</span>
+<span id="cb50-9"><a href="#cb50-9"></a>  )</span>
+<span id="cb50-10"><a href="#cb50-10"></a></span>
+<span id="cb50-11"><a href="#cb50-11"></a>nyc_taxi_zones<span class="sc">$</span>schema</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Schema
 location_id: int64
@@ -1080,30 +1111,30 @@ service_zone: string</code></pre>
 <section id="fixing-the-query" class="slide level2">
 <h2>Fixing the query</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
-<span id="cb50-2"><a href="#cb50-2"></a>  <span class="fu">select</span>(</span>
-<span id="cb50-3"><a href="#cb50-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
-<span id="cb50-4"><a href="#cb50-4"></a>    <span class="at">pickup_borough =</span> borough</span>
-<span id="cb50-5"><a href="#cb50-5"></a>  )</span>
-<span id="cb50-6"><a href="#cb50-6"></a></span>
-<span id="cb50-7"><a href="#cb50-7"></a>dropoff <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
-<span id="cb50-8"><a href="#cb50-8"></a>  <span class="fu">select</span>(</span>
-<span id="cb50-9"><a href="#cb50-9"></a>    <span class="at">dropoff_location_id =</span> location_id, </span>
-<span id="cb50-10"><a href="#cb50-10"></a>    <span class="at">dropoff_borough =</span> borough</span>
-<span id="cb50-11"><a href="#cb50-11"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1"></a>pickup <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb52-2"><a href="#cb52-2"></a>  <span class="fu">select</span>(</span>
+<span id="cb52-3"><a href="#cb52-3"></a>    <span class="at">pickup_location_id =</span> location_id, </span>
+<span id="cb52-4"><a href="#cb52-4"></a>    <span class="at">pickup_borough =</span> borough</span>
+<span id="cb52-5"><a href="#cb52-5"></a>  )</span>
+<span id="cb52-6"><a href="#cb52-6"></a></span>
+<span id="cb52-7"><a href="#cb52-7"></a>dropoff <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span> </span>
+<span id="cb52-8"><a href="#cb52-8"></a>  <span class="fu">select</span>(</span>
+<span id="cb52-9"><a href="#cb52-9"></a>    <span class="at">dropoff_location_id =</span> location_id, </span>
+<span id="cb52-10"><a href="#cb52-10"></a>    <span class="at">dropoff_borough =</span> borough</span>
+<span id="cb52-11"><a href="#cb52-11"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="fixing-the-query-1" class="slide level2">
 <h2>Fixing the query</h2>
 <div class="cell" data-hash="slides_cache/revealjs/fixing-the-query_33b8d873c99f4b0fe4e8e4e763bbd2bc">
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a><span class="fu">tic</span>()</span>
-<span id="cb51-2"><a href="#cb51-2"></a>borough_counts <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span> </span>
-<span id="cb51-3"><a href="#cb51-3"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
-<span id="cb51-4"><a href="#cb51-4"></a>  <span class="fu">left_join</span>(dropoff) <span class="sc">|&gt;</span></span>
-<span id="cb51-5"><a href="#cb51-5"></a>  <span class="fu">count</span>(pickup_borough, dropoff_borough) <span class="sc">|&gt;</span></span>
-<span id="cb51-6"><a href="#cb51-6"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
-<span id="cb51-7"><a href="#cb51-7"></a>  <span class="fu">collect</span>()</span>
-<span id="cb51-8"><a href="#cb51-8"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a><span class="fu">tic</span>()</span>
+<span id="cb53-2"><a href="#cb53-2"></a>borough_counts <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb53-3"><a href="#cb53-3"></a>  <span class="fu">left_join</span>(pickup) <span class="sc">|&gt;</span></span>
+<span id="cb53-4"><a href="#cb53-4"></a>  <span class="fu">left_join</span>(dropoff) <span class="sc">|&gt;</span></span>
+<span id="cb53-5"><a href="#cb53-5"></a>  <span class="fu">count</span>(pickup_borough, dropoff_borough) <span class="sc">|&gt;</span></span>
+<span id="cb53-6"><a href="#cb53-6"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb53-7"><a href="#cb53-7"></a>  <span class="fu">collect</span>()</span>
+<span id="cb53-8"><a href="#cb53-8"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>509.919 sec elapsed</code></pre>
 </div>
@@ -1112,7 +1143,7 @@ service_zone: string</code></pre>
 <section id="fixing-the-query-2" class="slide level2">
 <h2>Fixing the query</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a>borough_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>borough_counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 50 × 3
    pickup_borough dropoff_borough          n
@@ -1143,22 +1174,22 @@ service_zone: string</code></pre>
 <section id="a-difficulty-in-arrow" class="slide level2">
 <h2>A difficulty in {arrow}</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>penguins <span class="sc">|&gt;</span> </span>
-<span id="cb55-2"><a href="#cb55-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb55-3"><a href="#cb55-3"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span> <span class="co"># a window function!</span></span>
-<span id="cb55-4"><a href="#cb55-4"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
-<span id="cb55-5"><a href="#cb55-5"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb57-2"><a href="#cb57-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb57-3"><a href="#cb57-3"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span> <span class="co"># a window function!</span></span>
+<span id="cb57-4"><a href="#cb57-4"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb57-5"><a href="#cb57-5"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="an-easy-fix-with-duckdb" class="slide level2">
 <h2>An easy fix with {duckdb}</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1"></a>penguins <span class="sc">|&gt;</span> </span>
-<span id="cb56-2"><a href="#cb56-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb56-3"><a href="#cb56-3"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb56-4"><a href="#cb56-4"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb56-5"><a href="#cb56-5"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
-<span id="cb56-6"><a href="#cb56-6"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a>penguins <span class="sc">|&gt;</span> </span>
+<span id="cb58-2"><a href="#cb58-2"></a>  <span class="fu">arrow_table</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb58-3"><a href="#cb58-3"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb58-4"><a href="#cb58-4"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb58-5"><a href="#cb58-5"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb58-6"><a href="#cb58-6"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   lazy query [?? x 4]
 # Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
@@ -1181,26 +1212,26 @@ service_zone: string</code></pre>
 <section id="numerology-example" class="slide level2">
 <h2>Numerology example</h2>
 <div class="cell" data-hash="slides_cache/revealjs/numerology_5aa28ef883b8f65ca6ba7ce4752ce1da">
-<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a><span class="fu">tic</span>()</span>
-<span id="cb58-2"><a href="#cb58-2"></a>nyc_taxi_jan <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/year=2022/month=1/"</span>)</span>
-<span id="cb58-3"><a href="#cb58-3"></a>numerology <span class="ot">&lt;-</span> nyc_taxi_jan <span class="sc">|&gt;</span></span>
-<span id="cb58-4"><a href="#cb58-4"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span>  </span>
-<span id="cb58-5"><a href="#cb58-5"></a>  <span class="fu">window_order</span>(pickup_datetime) <span class="sc">|&gt;</span></span>
-<span id="cb58-6"><a href="#cb58-6"></a>  <span class="fu">mutate</span>(<span class="at">trip_id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb58-7"><a href="#cb58-7"></a>  <span class="fu">filter</span>(</span>
-<span id="cb58-8"><a href="#cb58-8"></a>    trip_id <span class="sc">|&gt;</span> <span class="fu">as.character</span>() <span class="sc">|&gt;</span> <span class="fu">str_detect</span>(<span class="st">"59"</span>),</span>
-<span id="cb58-9"><a href="#cb58-9"></a>    <span class="fu">second</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span>,</span>
-<span id="cb58-10"><a href="#cb58-10"></a>    <span class="fu">minute</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span></span>
-<span id="cb58-11"><a href="#cb58-11"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb58-12"><a href="#cb58-12"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb58-13"><a href="#cb58-13"></a>    <span class="at">magic_number =</span> trip_id <span class="sc">|&gt;</span> </span>
-<span id="cb58-14"><a href="#cb58-14"></a>      <span class="fu">as.character</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb58-15"><a href="#cb58-15"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[^59]"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb58-16"><a href="#cb58-16"></a>      <span class="fu">as.integer</span>()</span>
-<span id="cb58-17"><a href="#cb58-17"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb58-18"><a href="#cb58-18"></a>  <span class="fu">select</span>(trip_id, magic_number, pickup_datetime) <span class="sc">|&gt;</span></span>
-<span id="cb58-19"><a href="#cb58-19"></a>  <span class="fu">collect</span>()</span>
-<span id="cb58-20"><a href="#cb58-20"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1"></a><span class="fu">tic</span>()</span>
+<span id="cb60-2"><a href="#cb60-2"></a>nyc_taxi_jan <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">"~/Datasets/nyc-taxi/year=2022/month=1/"</span>)</span>
+<span id="cb60-3"><a href="#cb60-3"></a>numerology <span class="ot">&lt;-</span> nyc_taxi_jan <span class="sc">|&gt;</span></span>
+<span id="cb60-4"><a href="#cb60-4"></a>  <span class="fu">to_duckdb</span>() <span class="sc">|&gt;</span>  </span>
+<span id="cb60-5"><a href="#cb60-5"></a>  <span class="fu">window_order</span>(pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb60-6"><a href="#cb60-6"></a>  <span class="fu">mutate</span>(<span class="at">trip_id =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb60-7"><a href="#cb60-7"></a>  <span class="fu">filter</span>(</span>
+<span id="cb60-8"><a href="#cb60-8"></a>    trip_id <span class="sc">|&gt;</span> <span class="fu">as.character</span>() <span class="sc">|&gt;</span> <span class="fu">str_detect</span>(<span class="st">"59"</span>),</span>
+<span id="cb60-9"><a href="#cb60-9"></a>    <span class="fu">second</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span>,</span>
+<span id="cb60-10"><a href="#cb60-10"></a>    <span class="fu">minute</span>(pickup_datetime) <span class="sc">==</span> <span class="dv">59</span></span>
+<span id="cb60-11"><a href="#cb60-11"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb60-12"><a href="#cb60-12"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb60-13"><a href="#cb60-13"></a>    <span class="at">magic_number =</span> trip_id <span class="sc">|&gt;</span> </span>
+<span id="cb60-14"><a href="#cb60-14"></a>      <span class="fu">as.character</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb60-15"><a href="#cb60-15"></a>      <span class="fu">str_remove_all</span>(<span class="st">"[^59]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb60-16"><a href="#cb60-16"></a>      <span class="fu">as.integer</span>()</span>
+<span id="cb60-17"><a href="#cb60-17"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb60-18"><a href="#cb60-18"></a>  <span class="fu">select</span>(trip_id, magic_number, pickup_datetime) <span class="sc">|&gt;</span></span>
+<span id="cb60-19"><a href="#cb60-19"></a>  <span class="fu">collect</span>()</span>
+<span id="cb60-20"><a href="#cb60-20"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>0.542 sec elapsed</code></pre>
 </div>
@@ -1209,7 +1240,7 @@ service_zone: string</code></pre>
 <section id="numerology-example-1" class="slide level2">
 <h2>Numerology example</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1"></a>numerology</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1"></a>numerology</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 37 × 3
    trip_id magic_number pickup_datetime    
@@ -1252,10 +1283,10 @@ service_zone: string</code></pre>
 <section id="reading-parquet-files" class="slide level2">
 <h2>Reading parquet files</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1"></a>parquet_file <span class="ot">&lt;-</span> <span class="st">"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"</span></span>
-<span id="cb62-2"><a href="#cb62-2"></a></span>
-<span id="cb62-3"><a href="#cb62-3"></a>nyc_taxi_2019_09 <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(parquet_file)</span>
-<span id="cb62-4"><a href="#cb62-4"></a>nyc_taxi_2019_09</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1"></a>parquet_file <span class="ot">&lt;-</span> <span class="st">"~/Datasets/nyc-taxi/year=2019/month=9/part-0.parquet"</span></span>
+<span id="cb64-2"><a href="#cb64-2"></a></span>
+<span id="cb64-3"><a href="#cb64-3"></a>nyc_taxi_2019_09 <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(parquet_file)</span>
+<span id="cb64-4"><a href="#cb64-4"></a>nyc_taxi_2019_09</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6,567,396 × 22
    vendor_name pickup_datetime     dropoff_datetime    passenger_count
@@ -1283,8 +1314,8 @@ service_zone: string</code></pre>
 <section id="reading-parquet-files-1" class="slide level2">
 <h2>Reading parquet files</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1"></a>parquet_file <span class="sc">|&gt;</span></span>
-<span id="cb64-2"><a href="#cb64-2"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb66-2"><a href="#cb66-2"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6,567,396 × 4
    pickup_datetime     pickup_longitude pickup_latitude pickup_location_id
@@ -1306,21 +1337,21 @@ service_zone: string</code></pre>
 <section id="selective-reads-are-faster" class="slide level2">
 <h2>Selective reads are faster</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1"></a><span class="fu">tic</span>()</span>
-<span id="cb66-2"><a href="#cb66-2"></a>parquet_file <span class="sc">|&gt;</span></span>
-<span id="cb66-3"><a href="#cb66-3"></a>  <span class="fu">read_parquet</span>() <span class="sc">|&gt;</span></span>
-<span id="cb66-4"><a href="#cb66-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
-<span id="cb66-5"><a href="#cb66-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>0.515 sec elapsed</code></pre>
-</div>
 <div class="sourceCode cell-code" id="cb68"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1"></a><span class="fu">tic</span>()</span>
 <span id="cb68-2"><a href="#cb68-2"></a>parquet_file <span class="sc">|&gt;</span></span>
-<span id="cb68-3"><a href="#cb68-3"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb68-4"><a href="#cb68-4"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb68-3"><a href="#cb68-3"></a>  <span class="fu">read_parquet</span>() <span class="sc">|&gt;</span></span>
+<span id="cb68-4"><a href="#cb68-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb68-5"><a href="#cb68-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.103 sec elapsed</code></pre>
+<pre><code>0.507 sec elapsed</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1"></a><span class="fu">tic</span>()</span>
+<span id="cb70-2"><a href="#cb70-2"></a>parquet_file <span class="sc">|&gt;</span></span>
+<span id="cb70-3"><a href="#cb70-3"></a>  <span class="fu">read_parquet</span>(<span class="at">col_select =</span> <span class="fu">matches</span>(<span class="st">"pickup"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb70-4"><a href="#cb70-4"></a>  <span class="fu">invisible</span>()</span>
+<span id="cb70-5"><a href="#cb70-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>0.09 sec elapsed</code></pre>
 </div>
 </div>
 </section></section>
@@ -1332,7 +1363,7 @@ service_zone: string</code></pre>
 <section id="nyc-taxi-data-files" class="slide level2">
 <h2>NYC taxi data files</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1"></a>nyc_taxi<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1"></a>nyc_taxi<span class="sc">$</span>files</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  [1] "/home/danielle/Datasets/nyc-taxi/year=2009/month=1/part-0.parquet" 
   [2] "/home/danielle/Datasets/nyc-taxi/year=2009/month=10/part-0.parquet"
@@ -1498,39 +1529,39 @@ service_zone: string</code></pre>
 <section id="partition-structure-matters" class="slide level2">
 <h2>Partition structure matters</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1"></a><span class="fu">tic</span>()</span>
-<span id="cb72-2"><a href="#cb72-2"></a>nyc_taxi <span class="sc">|&gt;</span></span>
-<span id="cb72-3"><a href="#cb72-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2016</span>, month <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span></span>
-<span id="cb72-4"><a href="#cb72-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1"></a><span class="fu">tic</span>()</span>
+<span id="cb74-2"><a href="#cb74-2"></a>nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb74-3"><a href="#cb74-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2016</span>, month <span class="sc">==</span> <span class="dv">9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb74-4"><a href="#cb74-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 10116018</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.013 sec elapsed</code></pre>
+<pre><code>0.012 sec elapsed</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1"></a><span class="fu">tic</span>()</span>
-<span id="cb76-2"><a href="#cb76-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
-<span id="cb76-3"><a href="#cb76-3"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">==</span> <span class="dv">138</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb76-4"><a href="#cb76-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1"></a><span class="fu">tic</span>()</span>
+<span id="cb78-2"><a href="#cb78-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb78-3"><a href="#cb78-3"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">==</span> <span class="dv">138</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb78-4"><a href="#cb78-4"></a>  <span class="fu">nrow</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 10823589</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2.704 sec elapsed</code></pre>
+<pre><code>2.711 sec elapsed</code></pre>
 </div>
 </div>
 </section>
 <section id="writing-datasets" class="slide level2">
 <h2>Writing datasets</h2>
 <div class="cell" data-hash="slides_cache/revealjs/writing-dataset_df4b8e6934edbfcff541b1edb0d88e1a">
-<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1"></a><span class="fu">tic</span>()</span>
-<span id="cb80-2"><a href="#cb80-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
-<span id="cb80-3"><a href="#cb80-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2017</span>) <span class="sc">|&gt;</span></span>
-<span id="cb80-4"><a href="#cb80-4"></a>  <span class="fu">group_by</span>(month, vendor_name) <span class="sc">|&gt;</span></span>
-<span id="cb80-5"><a href="#cb80-5"></a>  <span class="fu">write_dataset</span>(<span class="st">"~/Datasets/nyc-taxi_2017"</span>)</span>
-<span id="cb80-6"><a href="#cb80-6"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1"></a><span class="fu">tic</span>()</span>
+<span id="cb82-2"><a href="#cb82-2"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
+<span id="cb82-3"><a href="#cb82-3"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2017</span>) <span class="sc">|&gt;</span></span>
+<span id="cb82-4"><a href="#cb82-4"></a>  <span class="fu">group_by</span>(month, vendor_name) <span class="sc">|&gt;</span></span>
+<span id="cb82-5"><a href="#cb82-5"></a>  <span class="fu">write_dataset</span>(<span class="st">"~/Datasets/nyc-taxi_2017"</span>)</span>
+<span id="cb82-6"><a href="#cb82-6"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>17.617 sec elapsed</code></pre>
 </div>
@@ -1556,7 +1587,7 @@ service_zone: string</code></pre>
 <section id="arrow-scalars" class="slide level2">
 <h2>Arrow scalars</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1"></a>Scalar<span class="sc">$</span><span class="fu">create</span>(<span class="st">"New York"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1"></a>Scalar<span class="sc">$</span><span class="fu">create</span>(<span class="st">"New York"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Scalar
 New York</code></pre>
@@ -1566,8 +1597,8 @@ New York</code></pre>
 <section id="arrow-arrays" class="slide level2">
 <h2>Arrow arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1"></a>city <span class="ot">&lt;-</span> Array<span class="sc">$</span><span class="fu">create</span>(<span class="fu">c</span>(<span class="st">"New York"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"Philadelphia"</span>))</span>
-<span id="cb84-2"><a href="#cb84-2"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1"></a>city <span class="ot">&lt;-</span> Array<span class="sc">$</span><span class="fu">create</span>(<span class="fu">c</span>(<span class="st">"New York"</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="st">"Philadelphia"</span>))</span>
+<span id="cb86-2"><a href="#cb86-2"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Array
 &lt;string&gt;
@@ -1583,7 +1614,7 @@ New York</code></pre>
 <section id="arrow-arrays-1" class="slide level2">
 <h2>Arrow arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1"></a>city[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1"></a>city[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Array
 &lt;string&gt;
@@ -1605,32 +1636,7 @@ New York</code></pre>
 <section id="chunked-arrays-1" class="slide level2">
 <h2>Chunked arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb88"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1"></a>city <span class="ot">&lt;-</span> ChunkedArray<span class="sc">$</span><span class="fu">create</span>(</span>
-<span id="cb88-2"><a href="#cb88-2"></a>  <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
-<span id="cb88-3"><a href="#cb88-3"></a>  <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
-<span id="cb88-4"><a href="#cb88-4"></a>)</span>
-<span id="cb88-5"><a href="#cb88-5"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>ChunkedArray
-[
-  [
-    "New York",
-    "San Francisco",
-    "Los Angeles",
-    "Philadelphia"
-  ],
-  [
-    "Sydney",
-    "Barcelona"
-  ]
-]</code></pre>
-</div>
-</div>
-</section>
-<section id="chunked-arrays-2" class="slide level2">
-<h2>Chunked arrays</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1"></a>city <span class="ot">&lt;-</span> <span class="fu">chunked_array</span>(</span>
+<div class="sourceCode cell-code" id="cb90"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1"></a>city <span class="ot">&lt;-</span> ChunkedArray<span class="sc">$</span><span class="fu">create</span>(</span>
 <span id="cb90-2"><a href="#cb90-2"></a>  <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
 <span id="cb90-3"><a href="#cb90-3"></a>  <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
 <span id="cb90-4"><a href="#cb90-4"></a>)</span>
@@ -1652,10 +1658,35 @@ New York</code></pre>
 </div>
 </div>
 </section>
+<section id="chunked-arrays-2" class="slide level2">
+<h2>Chunked arrays</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1"></a>city <span class="ot">&lt;-</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb92-2"><a href="#cb92-2"></a>  <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
+<span id="cb92-3"><a href="#cb92-3"></a>  <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
+<span id="cb92-4"><a href="#cb92-4"></a>)</span>
+<span id="cb92-5"><a href="#cb92-5"></a>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ChunkedArray
+[
+  [
+    "New York",
+    "San Francisco",
+    "Los Angeles",
+    "Philadelphia"
+  ],
+  [
+    "Sydney",
+    "Barcelona"
+  ]
+]</code></pre>
+</div>
+</div>
+</section>
 <section id="chunked-arrays-3" class="slide level2">
 <h2>Chunked arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1"></a>city[<span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1"></a>city[<span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>ChunkedArray
 [
@@ -1673,21 +1704,21 @@ New York</code></pre>
 <section id="tables-are-collections-of-chunked-arrays" class="slide level2">
 <h2>Tables are collections of chunked arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1"></a>riots <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
-<span id="cb94-2"><a href="#cb94-2"></a>  <span class="at">location =</span> <span class="fu">chunked_array</span>(</span>
-<span id="cb94-3"><a href="#cb94-3"></a>    <span class="fu">c</span>(<span class="st">"Stonewall Inn"</span>, <span class="st">"Compton's Cafeteria"</span>, <span class="st">"Cooper Do-nuts"</span>, <span class="st">"Dewey's"</span>), </span>
-<span id="cb94-4"><a href="#cb94-4"></a>    <span class="fu">c</span>(<span class="st">"King's Cross"</span>, <span class="st">"La Rambla"</span>)</span>
-<span id="cb94-5"><a href="#cb94-5"></a>  ), </span>
-<span id="cb94-6"><a href="#cb94-6"></a>  <span class="at">year =</span> <span class="fu">chunked_array</span>(</span>
-<span id="cb94-7"><a href="#cb94-7"></a>    <span class="fu">c</span>(<span class="dv">1969</span>, <span class="dv">1966</span>, <span class="dv">1959</span>, <span class="dv">1965</span>),</span>
-<span id="cb94-8"><a href="#cb94-8"></a>    <span class="fu">c</span>(<span class="dv">1978</span>, <span class="dv">1977</span>)</span>
-<span id="cb94-9"><a href="#cb94-9"></a>  ),</span>
-<span id="cb94-10"><a href="#cb94-10"></a>  <span class="at">city =</span> <span class="fu">chunked_array</span>(</span>
-<span id="cb94-11"><a href="#cb94-11"></a>    <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
-<span id="cb94-12"><a href="#cb94-12"></a>    <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
-<span id="cb94-13"><a href="#cb94-13"></a>  )</span>
-<span id="cb94-14"><a href="#cb94-14"></a>)</span>
-<span id="cb94-15"><a href="#cb94-15"></a>riots</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1"></a>riots <span class="ot">&lt;-</span> <span class="fu">arrow_table</span>(</span>
+<span id="cb96-2"><a href="#cb96-2"></a>  <span class="at">location =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb96-3"><a href="#cb96-3"></a>    <span class="fu">c</span>(<span class="st">"Stonewall Inn"</span>, <span class="st">"Compton's Cafeteria"</span>, <span class="st">"Cooper Do-nuts"</span>, <span class="st">"Dewey's"</span>), </span>
+<span id="cb96-4"><a href="#cb96-4"></a>    <span class="fu">c</span>(<span class="st">"King's Cross"</span>, <span class="st">"La Rambla"</span>)</span>
+<span id="cb96-5"><a href="#cb96-5"></a>  ), </span>
+<span id="cb96-6"><a href="#cb96-6"></a>  <span class="at">year =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb96-7"><a href="#cb96-7"></a>    <span class="fu">c</span>(<span class="dv">1969</span>, <span class="dv">1966</span>, <span class="dv">1959</span>, <span class="dv">1965</span>),</span>
+<span id="cb96-8"><a href="#cb96-8"></a>    <span class="fu">c</span>(<span class="dv">1978</span>, <span class="dv">1977</span>)</span>
+<span id="cb96-9"><a href="#cb96-9"></a>  ),</span>
+<span id="cb96-10"><a href="#cb96-10"></a>  <span class="at">city =</span> <span class="fu">chunked_array</span>(</span>
+<span id="cb96-11"><a href="#cb96-11"></a>    <span class="fu">c</span>(<span class="st">"New York"</span>, <span class="st">"San Francisco"</span>, <span class="st">"Los Angeles"</span>, <span class="st">"Philadelphia"</span>),</span>
+<span id="cb96-12"><a href="#cb96-12"></a>    <span class="fu">c</span>(<span class="st">"Sydney"</span>, <span class="st">"Barcelona"</span>)</span>
+<span id="cb96-13"><a href="#cb96-13"></a>  )</span>
+<span id="cb96-14"><a href="#cb96-14"></a>)</span>
+<span id="cb96-15"><a href="#cb96-15"></a>riots</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Table
 6 rows x 3 columns
@@ -1700,7 +1731,7 @@ $city &lt;string&gt;</code></pre>
 <section id="tables-are-collections-of-chunked-arrays-1" class="slide level2">
 <h2>Tables are collections of chunked arrays</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1"></a>riots<span class="sc">$</span>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1"></a>riots<span class="sc">$</span>city</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>ChunkedArray
 [
@@ -1721,7 +1752,7 @@ $city &lt;string&gt;</code></pre>
 <section id="pulling-into-r" class="slide level2">
 <h2>Pulling into R</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1"></a><span class="fu">as.data.frame</span>(riots)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1"></a><span class="fu">as.data.frame</span>(riots)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 3
   location             year city         
@@ -1760,97 +1791,97 @@ $city &lt;string&gt;</code></pre>
 <section id="some-things-really-need-arrow" class="slide level2">
 <h2>Some things really need Arrow</h2>
 <div class="cell" data-hash="slides_cache/revealjs/airport-pickups-arrow_46d70703353ea0e6fc0b015369fdc57b">
-<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
-<span id="cb100-2"><a href="#cb100-2"></a>  <span class="fu">read_csv_arrow</span>(</span>
-<span id="cb100-3"><a href="#cb100-3"></a>    <span class="at">as_data_frame =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb100-4"><a href="#cb100-4"></a>    <span class="at">skip =</span> <span class="dv">1</span>, </span>
-<span id="cb100-5"><a href="#cb100-5"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
-<span id="cb100-6"><a href="#cb100-6"></a>      <span class="at">LocationID =</span> <span class="fu">int64</span>(),</span>
-<span id="cb100-7"><a href="#cb100-7"></a>      <span class="at">Borough =</span> <span class="fu">utf8</span>(),</span>
-<span id="cb100-8"><a href="#cb100-8"></a>      <span class="at">Zone =</span> <span class="fu">utf8</span>(),</span>
-<span id="cb100-9"><a href="#cb100-9"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
-<span id="cb100-10"><a href="#cb100-10"></a>    )</span>
-<span id="cb100-11"><a href="#cb100-11"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb100-12"><a href="#cb100-12"></a>  <span class="fu">rename</span>(</span>
-<span id="cb100-13"><a href="#cb100-13"></a>    <span class="at">location_id =</span> LocationID,</span>
-<span id="cb100-14"><a href="#cb100-14"></a>    <span class="at">borough =</span> Borough,</span>
-<span id="cb100-15"><a href="#cb100-15"></a>    <span class="at">zone =</span> Zone,</span>
-<span id="cb100-16"><a href="#cb100-16"></a>    <span class="at">service_zone =</span> service_zone</span>
-<span id="cb100-17"><a href="#cb100-17"></a>  )</span>
-<span id="cb100-18"><a href="#cb100-18"></a>  </span>
-<span id="cb100-19"><a href="#cb100-19"></a>airport_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
-<span id="cb100-20"><a href="#cb100-20"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb100-21"><a href="#cb100-21"></a>  <span class="fu">pull</span>(location_id)</span>
-<span id="cb100-22"><a href="#cb100-22"></a></span>
-<span id="cb100-23"><a href="#cb100-23"></a>dropoff_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
-<span id="cb100-24"><a href="#cb100-24"></a>  <span class="fu">select</span>(</span>
-<span id="cb100-25"><a href="#cb100-25"></a>    <span class="at">dropoff_location_id =</span> location_id,</span>
-<span id="cb100-26"><a href="#cb100-26"></a>    <span class="at">dropoff_zone =</span> zone</span>
-<span id="cb100-27"><a href="#cb100-27"></a>  ) </span>
-<span id="cb100-28"><a href="#cb100-28"></a></span>
-<span id="cb100-29"><a href="#cb100-29"></a>airport_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
-<span id="cb100-30"><a href="#cb100-30"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">%in%</span> airport_zones) <span class="sc">|&gt;</span></span>
-<span id="cb100-31"><a href="#cb100-31"></a>  <span class="fu">select</span>(</span>
-<span id="cb100-32"><a href="#cb100-32"></a>    <span class="fu">matches</span>(<span class="st">"datetime"</span>),</span>
-<span id="cb100-33"><a href="#cb100-33"></a>    <span class="fu">matches</span>(<span class="st">"location_id"</span>)</span>
-<span id="cb100-34"><a href="#cb100-34"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb100-35"><a href="#cb100-35"></a>  <span class="fu">left_join</span>(dropoff_zones) <span class="sc">|&gt;</span></span>
-<span id="cb100-36"><a href="#cb100-36"></a>  <span class="fu">count</span>(dropoff_zone) <span class="sc">|&gt;</span></span>
-<span id="cb100-37"><a href="#cb100-37"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
-<span id="cb100-38"><a href="#cb100-38"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1"></a>nyc_taxi_zones <span class="ot">&lt;-</span> <span class="st">"data/taxi_zone_lookup.csv"</span> <span class="sc">|&gt;</span> </span>
+<span id="cb102-2"><a href="#cb102-2"></a>  <span class="fu">read_csv_arrow</span>(</span>
+<span id="cb102-3"><a href="#cb102-3"></a>    <span class="at">as_data_frame =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb102-4"><a href="#cb102-4"></a>    <span class="at">skip =</span> <span class="dv">1</span>, </span>
+<span id="cb102-5"><a href="#cb102-5"></a>    <span class="at">schema =</span> <span class="fu">schema</span>(</span>
+<span id="cb102-6"><a href="#cb102-6"></a>      <span class="at">LocationID =</span> <span class="fu">int64</span>(),</span>
+<span id="cb102-7"><a href="#cb102-7"></a>      <span class="at">Borough =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb102-8"><a href="#cb102-8"></a>      <span class="at">Zone =</span> <span class="fu">utf8</span>(),</span>
+<span id="cb102-9"><a href="#cb102-9"></a>      <span class="at">service_zone =</span> <span class="fu">utf8</span>()</span>
+<span id="cb102-10"><a href="#cb102-10"></a>    )</span>
+<span id="cb102-11"><a href="#cb102-11"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb102-12"><a href="#cb102-12"></a>  <span class="fu">rename</span>(</span>
+<span id="cb102-13"><a href="#cb102-13"></a>    <span class="at">location_id =</span> LocationID,</span>
+<span id="cb102-14"><a href="#cb102-14"></a>    <span class="at">borough =</span> Borough,</span>
+<span id="cb102-15"><a href="#cb102-15"></a>    <span class="at">zone =</span> Zone,</span>
+<span id="cb102-16"><a href="#cb102-16"></a>    <span class="at">service_zone =</span> service_zone</span>
+<span id="cb102-17"><a href="#cb102-17"></a>  )</span>
+<span id="cb102-18"><a href="#cb102-18"></a>  </span>
+<span id="cb102-19"><a href="#cb102-19"></a>airport_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
+<span id="cb102-20"><a href="#cb102-20"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb102-21"><a href="#cb102-21"></a>  <span class="fu">pull</span>(location_id)</span>
+<span id="cb102-22"><a href="#cb102-22"></a></span>
+<span id="cb102-23"><a href="#cb102-23"></a>dropoff_zones <span class="ot">&lt;-</span> nyc_taxi_zones <span class="sc">|&gt;</span></span>
+<span id="cb102-24"><a href="#cb102-24"></a>  <span class="fu">select</span>(</span>
+<span id="cb102-25"><a href="#cb102-25"></a>    <span class="at">dropoff_location_id =</span> location_id,</span>
+<span id="cb102-26"><a href="#cb102-26"></a>    <span class="at">dropoff_zone =</span> zone</span>
+<span id="cb102-27"><a href="#cb102-27"></a>  ) </span>
+<span id="cb102-28"><a href="#cb102-28"></a></span>
+<span id="cb102-29"><a href="#cb102-29"></a>airport_pickups <span class="ot">&lt;-</span> nyc_taxi <span class="sc">|&gt;</span></span>
+<span id="cb102-30"><a href="#cb102-30"></a>  <span class="fu">filter</span>(pickup_location_id <span class="sc">%in%</span> airport_zones) <span class="sc">|&gt;</span></span>
+<span id="cb102-31"><a href="#cb102-31"></a>  <span class="fu">select</span>(</span>
+<span id="cb102-32"><a href="#cb102-32"></a>    <span class="fu">matches</span>(<span class="st">"datetime"</span>),</span>
+<span id="cb102-33"><a href="#cb102-33"></a>    <span class="fu">matches</span>(<span class="st">"location_id"</span>)</span>
+<span id="cb102-34"><a href="#cb102-34"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb102-35"><a href="#cb102-35"></a>  <span class="fu">left_join</span>(dropoff_zones) <span class="sc">|&gt;</span></span>
+<span id="cb102-36"><a href="#cb102-36"></a>  <span class="fu">count</span>(dropoff_zone) <span class="sc">|&gt;</span></span>
+<span id="cb102-37"><a href="#cb102-37"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n)) <span class="sc">|&gt;</span></span>
+<span id="cb102-38"><a href="#cb102-38"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="other-things-really-need-r" class="slide level2">
 <h2>Other things really need R</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1"></a>dat <span class="ot">&lt;-</span> <span class="st">"data/taxi_zones/taxi_zones.shp"</span> <span class="sc">|&gt;</span></span>
-<span id="cb101-2"><a href="#cb101-2"></a>  <span class="fu">read_sf</span>() <span class="sc">|&gt;</span></span>
-<span id="cb101-3"><a href="#cb101-3"></a>  <span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
-<span id="cb101-4"><a href="#cb101-4"></a>  <span class="fu">left_join</span>(airport_pickups,</span>
-<span id="cb101-5"><a href="#cb101-5"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"zone"</span> <span class="ot">=</span> <span class="st">"dropoff_zone"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb101-6"><a href="#cb101-6"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span>
-<span id="cb101-7"><a href="#cb101-7"></a></span>
-<span id="cb101-8"><a href="#cb101-8"></a>the_big_picture <span class="ot">&lt;-</span> dat <span class="sc">|&gt;</span></span>
-<span id="cb101-9"><a href="#cb101-9"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">fill =</span> n)) <span class="sc">+</span></span>
-<span id="cb101-10"><a href="#cb101-10"></a>  <span class="fu">geom_sf</span>(<span class="at">size =</span> .<span class="dv">1</span>, <span class="at">color =</span> <span class="st">"#222222"</span>) <span class="sc">+</span></span>
-<span id="cb101-11"><a href="#cb101-11"></a>  <span class="fu">scale_fill_distiller</span>(</span>
-<span id="cb101-12"><a href="#cb101-12"></a>    <span class="at">name =</span> <span class="st">"Number of trips"</span>,</span>
-<span id="cb101-13"><a href="#cb101-13"></a>    <span class="at">labels =</span> <span class="fu">label_comma</span>(),</span>
-<span id="cb101-14"><a href="#cb101-14"></a>    <span class="at">palette =</span> <span class="st">"Oranges"</span>,</span>
-<span id="cb101-15"><a href="#cb101-15"></a>    <span class="at">direction =</span> <span class="dv">1</span></span>
-<span id="cb101-16"><a href="#cb101-16"></a>  ) <span class="sc">+</span></span>
-<span id="cb101-17"><a href="#cb101-17"></a>  <span class="fu">geom_label_repel</span>(</span>
-<span id="cb101-18"><a href="#cb101-18"></a>    <span class="at">stat =</span> <span class="st">"sf_coordinates"</span>,</span>
-<span id="cb101-19"><a href="#cb101-19"></a>    <span class="at">data =</span> dat <span class="sc">|&gt;</span></span>
-<span id="cb101-20"><a href="#cb101-20"></a>      <span class="fu">mutate</span>(<span class="at">zone =</span> <span class="fu">case_when</span>(</span>
-<span id="cb101-21"><a href="#cb101-21"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>) <span class="sc">~</span> zone,</span>
-<span id="cb101-22"><a href="#cb101-22"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Times"</span>) <span class="sc">~</span> zone,</span>
-<span id="cb101-23"><a href="#cb101-23"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">""</span>)</span>
-<span id="cb101-24"><a href="#cb101-24"></a>      ),</span>
-<span id="cb101-25"><a href="#cb101-25"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">label =</span> zone, <span class="at">geometry =</span> geometry),</span>
-<span id="cb101-26"><a href="#cb101-26"></a>    <span class="at">max.overlaps =</span> <span class="dv">50</span>,</span>
-<span id="cb101-27"><a href="#cb101-27"></a>    <span class="at">box.padding =</span> .<span class="dv">5</span>,</span>
-<span id="cb101-28"><a href="#cb101-28"></a>    <span class="at">label.padding =</span> .<span class="dv">5</span>,</span>
-<span id="cb101-29"><a href="#cb101-29"></a>    <span class="at">label.size =</span> .<span class="dv">15</span>,</span>
-<span id="cb101-30"><a href="#cb101-30"></a>    <span class="at">label.r =</span> <span class="dv">0</span>,</span>
-<span id="cb101-31"><a href="#cb101-31"></a>    <span class="at">force =</span> <span class="dv">30</span>,</span>
-<span id="cb101-32"><a href="#cb101-32"></a>    <span class="at">force_pull =</span> <span class="dv">0</span>,</span>
-<span id="cb101-33"><a href="#cb101-33"></a>    <span class="at">fill =</span> <span class="st">"white"</span>,</span>
-<span id="cb101-34"><a href="#cb101-34"></a>    <span class="at">min.segment.length =</span> <span class="dv">0</span></span>
-<span id="cb101-35"><a href="#cb101-35"></a>  ) <span class="sc">+</span></span>
-<span id="cb101-36"><a href="#cb101-36"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb101-37"><a href="#cb101-37"></a>  <span class="fu">theme</span>(</span>
-<span id="cb101-38"><a href="#cb101-38"></a>    <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"black"</span>), </span>
-<span id="cb101-39"><a href="#cb101-39"></a>    <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">colour =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="st">"#839496"</span>),</span>
-<span id="cb101-40"><a href="#cb101-40"></a>    <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>),</span>
-<span id="cb101-41"><a href="#cb101-41"></a>    <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>)</span>
-<span id="cb101-42"><a href="#cb101-42"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1"></a>dat <span class="ot">&lt;-</span> <span class="st">"data/taxi_zones/taxi_zones.shp"</span> <span class="sc">|&gt;</span></span>
+<span id="cb103-2"><a href="#cb103-2"></a>  <span class="fu">read_sf</span>() <span class="sc">|&gt;</span></span>
+<span id="cb103-3"><a href="#cb103-3"></a>  <span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb103-4"><a href="#cb103-4"></a>  <span class="fu">left_join</span>(airport_pickups,</span>
+<span id="cb103-5"><a href="#cb103-5"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"zone"</span> <span class="ot">=</span> <span class="st">"dropoff_zone"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb103-6"><a href="#cb103-6"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n))</span>
+<span id="cb103-7"><a href="#cb103-7"></a></span>
+<span id="cb103-8"><a href="#cb103-8"></a>the_big_picture <span class="ot">&lt;-</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb103-9"><a href="#cb103-9"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">fill =</span> n)) <span class="sc">+</span></span>
+<span id="cb103-10"><a href="#cb103-10"></a>  <span class="fu">geom_sf</span>(<span class="at">size =</span> .<span class="dv">1</span>, <span class="at">color =</span> <span class="st">"#222222"</span>) <span class="sc">+</span></span>
+<span id="cb103-11"><a href="#cb103-11"></a>  <span class="fu">scale_fill_distiller</span>(</span>
+<span id="cb103-12"><a href="#cb103-12"></a>    <span class="at">name =</span> <span class="st">"Number of trips"</span>,</span>
+<span id="cb103-13"><a href="#cb103-13"></a>    <span class="at">labels =</span> <span class="fu">label_comma</span>(),</span>
+<span id="cb103-14"><a href="#cb103-14"></a>    <span class="at">palette =</span> <span class="st">"Oranges"</span>,</span>
+<span id="cb103-15"><a href="#cb103-15"></a>    <span class="at">direction =</span> <span class="dv">1</span></span>
+<span id="cb103-16"><a href="#cb103-16"></a>  ) <span class="sc">+</span></span>
+<span id="cb103-17"><a href="#cb103-17"></a>  <span class="fu">geom_label_repel</span>(</span>
+<span id="cb103-18"><a href="#cb103-18"></a>    <span class="at">stat =</span> <span class="st">"sf_coordinates"</span>,</span>
+<span id="cb103-19"><a href="#cb103-19"></a>    <span class="at">data =</span> dat <span class="sc">|&gt;</span></span>
+<span id="cb103-20"><a href="#cb103-20"></a>      <span class="fu">mutate</span>(<span class="at">zone =</span> <span class="fu">case_when</span>(</span>
+<span id="cb103-21"><a href="#cb103-21"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Airport"</span>) <span class="sc">~</span> zone,</span>
+<span id="cb103-22"><a href="#cb103-22"></a>        <span class="fu">str_detect</span>(zone, <span class="st">"Times"</span>) <span class="sc">~</span> zone,</span>
+<span id="cb103-23"><a href="#cb103-23"></a>        <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">""</span>)</span>
+<span id="cb103-24"><a href="#cb103-24"></a>      ),</span>
+<span id="cb103-25"><a href="#cb103-25"></a>    <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">label =</span> zone, <span class="at">geometry =</span> geometry),</span>
+<span id="cb103-26"><a href="#cb103-26"></a>    <span class="at">max.overlaps =</span> <span class="dv">50</span>,</span>
+<span id="cb103-27"><a href="#cb103-27"></a>    <span class="at">box.padding =</span> .<span class="dv">5</span>,</span>
+<span id="cb103-28"><a href="#cb103-28"></a>    <span class="at">label.padding =</span> .<span class="dv">5</span>,</span>
+<span id="cb103-29"><a href="#cb103-29"></a>    <span class="at">label.size =</span> .<span class="dv">15</span>,</span>
+<span id="cb103-30"><a href="#cb103-30"></a>    <span class="at">label.r =</span> <span class="dv">0</span>,</span>
+<span id="cb103-31"><a href="#cb103-31"></a>    <span class="at">force =</span> <span class="dv">30</span>,</span>
+<span id="cb103-32"><a href="#cb103-32"></a>    <span class="at">force_pull =</span> <span class="dv">0</span>,</span>
+<span id="cb103-33"><a href="#cb103-33"></a>    <span class="at">fill =</span> <span class="st">"white"</span>,</span>
+<span id="cb103-34"><a href="#cb103-34"></a>    <span class="at">min.segment.length =</span> <span class="dv">0</span></span>
+<span id="cb103-35"><a href="#cb103-35"></a>  ) <span class="sc">+</span></span>
+<span id="cb103-36"><a href="#cb103-36"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb103-37"><a href="#cb103-37"></a>  <span class="fu">theme</span>(</span>
+<span id="cb103-38"><a href="#cb103-38"></a>    <span class="at">text =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"black"</span>), </span>
+<span id="cb103-39"><a href="#cb103-39"></a>    <span class="at">plot.background =</span> <span class="fu">element_rect</span>(<span class="at">colour =</span> <span class="cn">NA</span>, <span class="at">fill =</span> <span class="st">"#839496"</span>),</span>
+<span id="cb103-40"><a href="#cb103-40"></a>    <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"white"</span>),</span>
+<span id="cb103-41"><a href="#cb103-41"></a>    <span class="at">legend.margin =</span> <span class="fu">margin</span>(<span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>)</span>
+<span id="cb103-42"><a href="#cb103-42"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="arrow-brings-them-together" class="slide level2">
 <h2>{arrow} brings them together</h2>
 <div class="cell" data-fig.dpi="300" data-hash="slides_cache/revealjs/airport-pickups-render_892571eacb7ba5df50c2312fa6d90e0e">
-<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1"></a>the_big_picture</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1"></a>the_big_picture</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
 

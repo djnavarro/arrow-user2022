@@ -367,8 +367,8 @@
     "objectID": "slides.html#one-table-dplyr-verbs-collect",
     "href": "slides.html#one-table-dplyr-verbs-collect",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
-    "section": "One-table dplyr verbs: collect()",
-    "text": "One-table dplyr verbs: collect()\n\ntic()\ncollect(shared_rides)\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\ntoc()\n\n1.977 sec elapsed"
+    "section": "One-table {dplyr} verbs: collect()",
+    "text": "One-table {dplyr} verbs: collect()\n\ntic()\ncollect(shared_rides)\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\ntoc()\n\n1.977 sec elapsed"
   },
   {
     "objectID": "slides.html#limitations",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.515 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.103 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.507 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.09 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.013 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.704 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.711 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -908,5 +908,103 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "NYC taxi data: Our first commands",
     "text": "NYC taxi data: Our first commands\n\nHow many rows are there in our table?\n\n\nnyc_taxi |> \n  nrow()\n\n\n\nUse head() to extract first six rows\nUse collect() to run query and return to R\n\n\nnyc_taxi |> \n  head() |> \n  collect()"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-this-looks-familiar",
+    "href": "slides.html#one-table-dplyr-verbs-this-looks-familiar",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table {dplyr} verbs: This looks familiar!",
+    "text": "One-table {dplyr} verbs: This looks familiar!\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100)"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-queries-must-be-evaluated-explicitly",
+    "href": "slides.html#one-table-dplyr-verbs-queries-must-be-evaluated-explicitly",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table {dplyr} verbs: queries must be evaluated explicitly",
+    "text": "One-table {dplyr} verbs: queries must be evaluated explicitly\n\nshared_rides\n\nFileSystemDataset (query)\nyear: int32\nall_trips: int32\nshared_trips: bool\npct_shared: double (multiply_checked(divide(cast(shared_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), cast(all_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false})), 100))\n\nSee $.data for the source Arrow object"
+  },
+  {
+    "objectID": "slides.html#one-table-dplyr-verbs-the-difference-between-collect-and-compute",
+    "href": "slides.html#one-table-dplyr-verbs-the-difference-between-collect-and-compute",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "One-table {dplyr} verbs: The difference between collect() and compute()",
+    "text": "One-table {dplyr} verbs: The difference between collect() and compute()\n\ncompute() evaluates the query, output stays in Arrow\ncollect() evaluates the query, output returns to R"
+  },
+  {
+    "objectID": "slides.html#familiar-one-table-dplyr-verbs",
+    "href": "slides.html#familiar-one-table-dplyr-verbs",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Familiar one-table {dplyr} verbs!",
+    "text": "Familiar one-table {dplyr} verbs!\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100)"
+  },
+  {
+    "objectID": "slides.html#the-result-is-an-unevaluated-query",
+    "href": "slides.html#the-result-is-an-unevaluated-query",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "The result is an unevaluated query",
+    "text": "The result is an unevaluated query\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) \n\nshared_rides\n\nFileSystemDataset (query)\nyear: int32\nall_trips: int32\nshared_trips: bool\npct_shared: double (multiply_checked(divide(cast(shared_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), cast(all_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false})), 100))\n\nSee $.data for the source Arrow object"
+  },
+  {
+    "objectID": "slides.html#evaluation-by-collect-and-compute",
+    "href": "slides.html#evaluation-by-collect-and-compute",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Evaluation by collect() and compute()",
+    "text": "Evaluation by collect() and compute()\n\ncompute() evaluates the query, output stays in Arrow\ncollect() evaluates the query, output returns to R"
+  },
+  {
+    "objectID": "slides.html#using-collect",
+    "href": "slides.html#using-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Using collect()",
+    "text": "Using collect()\n\ntic()\ncollect(shared_rides)\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <int>        <int>      <dbl>\n1  2017 113495512     32296166       28.5\n2  2018 102797401     28796633       28.0\n3  2019  84393604     23515989       27.9\n4  2020  24647055      5837960       23.7\n5  2021  30902618      7221844       23.4\n\ntoc()\n\n1.977 sec elapsed"
+  },
+  {
+    "objectID": "slides.html#the-output-is-a-query",
+    "href": "slides.html#the-output-is-a-query",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "The output is a query",
+    "text": "The output is a query\n\nshared_rides <- nyc_taxi |>\n  filter(year %in% 2017:2021) |> \n  group_by(year) |>\n  summarize(\n    all_trips = n(),\n    shared_trips = sum(passenger_count > 1, na.rm = TRUE)\n  ) |>\n  mutate(pct_shared = shared_trips / all_trips * 100) \n\nshared_rides\n\nFileSystemDataset (query)\nyear: int32\nall_trips: int32\nshared_trips: bool\npct_shared: double (multiply_checked(divide(cast(shared_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false}), cast(all_trips, {to_type=double, allow_int_overflow=false, allow_time_truncate=false, allow_time_overflow=false, allow_decimal_truncate=false, allow_float_truncate=false, allow_invalid_utf8=false})), 100))\n\nSee $.data for the source Arrow object"
+  },
+  {
+    "objectID": "slides.html#evaluate-queries-with-collect-or-compute",
+    "href": "slides.html#evaluate-queries-with-collect-or-compute",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Evaluate queries with collect() or compute()",
+    "text": "Evaluate queries with collect() or compute()\n\ncompute() evaluates the query, output stays in Arrow\ncollect() evaluates the query, output returns to R"
+  },
+  {
+    "objectID": "slides.html#to-collect-or-to-compute",
+    "href": "slides.html#to-collect-or-to-compute",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "To collect() or to compute()?",
+    "text": "To collect() or to compute()?\n\ncompute() evaluates the query, output stays in Arrow\ncollect() evaluates the query, output returns to R"
+  },
+  {
+    "objectID": "slides.html#solution-go-across-after-you-collect",
+    "href": "slides.html#solution-go-across-after-you-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Solution: go across() after you collect()",
+    "text": "Solution: go across() after you collect()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#solution-collect-before-across",
+    "href": "slides.html#solution-collect-before-across",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Solution: collect() before across()",
+    "text": "Solution: collect() before across()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#call-collect-before-across",
+    "href": "slides.html#call-collect-before-across",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Call collect() before across()",
+    "text": "Call collect() before across()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
+  },
+  {
+    "objectID": "slides.html#call-collect-then-across",
+    "href": "slides.html#call-collect-then-across",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Call collect(), then across()",
+    "text": "Call collect(), then across()\n\nshared_rides |>\n  collect() |>\n  mutate(across(ends_with(\"trips\"), millions))\n\n# A tibble: 5 × 4\n   year all_trips shared_trips pct_shared\n  <int>     <dbl>        <dbl>      <dbl>\n1  2017     113.         32.3        28.5\n2  2018     103.         28.8        28.0\n3  2019      84.4        23.5        27.9\n4  2020      24.6         5.84       23.7\n5  2021      30.9         7.22       23.4"
   }
 ]

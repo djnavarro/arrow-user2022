@@ -212,7 +212,7 @@ Section 3: In which we unpack some things
 
 Section 4: In which we explore one-table computations
 
-## One-table dplyr verbs: queries
+## Familiar one-table {dplyr} verbs!
 
 ```{r shared-rides-query}
 shared_rides <- nyc_taxi |>
@@ -225,7 +225,27 @@ shared_rides <- nyc_taxi |>
   mutate(pct_shared = shared_trips / all_trips * 100) 
 ```
 
-## One-table dplyr verbs: `collect()`
+## The output is a query
+
+```{r show-query}
+shared_rides <- nyc_taxi |>
+  filter(year %in% 2017:2021) |> 
+  group_by(year) |>
+  summarize(
+    all_trips = n(),
+    shared_trips = sum(passenger_count > 1, na.rm = TRUE)
+  ) |>
+  mutate(pct_shared = shared_trips / all_trips * 100) 
+
+shared_rides
+```
+
+## To `collect()` or to `compute()`?
+
+- `compute()` evaluates the query, output stays in Arrow
+- `collect()` evaluates the query, output returns to R
+
+## Using `collect()`
 
 ```{r shared-rides-collect, cache=TRUE}
 tic()
@@ -265,7 +285,7 @@ shared_rides |>
   collect()
 ```
 
-## Do `across()` after `collect()`
+## Call `collect()`, then `across()`
 
 ```{r across-later}
 shared_rides |>
