@@ -489,7 +489,7 @@ borough_counts
 
 
 
-::: {.callout-tip}
+::: {.callout-tip  #exercise-joins}
 ## Exercises
 
 ::: {.panel-tabset}

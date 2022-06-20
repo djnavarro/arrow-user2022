@@ -535,7 +535,7 @@ toc()
 borough_counts
 ```
 
-## Exercise
+## [Exercise](/data-wrangling.html#exercise-joins)
 
 How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? 
 
