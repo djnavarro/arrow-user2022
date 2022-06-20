@@ -732,13 +732,17 @@ nyc_taxi$files
 
 ## Partition structure matters
 
-```{r taxi-subset-filtering-times}
+```{r taxi-subset-filtering-times-1}
 tic()
 nyc_taxi |>
   filter(year == 2016, month == 9) |>
   nrow() 
 toc()
+```
 
+## Partition structure matters
+
+```{r taxi-subset-filtering-times-2}
 tic()
 nyc_taxi |> 
   filter(pickup_location_id == 138) |> 
@@ -756,6 +760,11 @@ nyc_taxi |>
   write_dataset("~/Datasets/nyc-taxi_2017")
 toc()
 ```
+
+
+## [Exercises](#exercise-dataset)
+
+![](img/dataset-exercises.png)
 
 
 # Advanced Arrow

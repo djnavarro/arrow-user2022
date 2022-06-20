@@ -351,7 +351,7 @@ toc()
 
 The difference is not quite as extreme as the contrived example earlier, but it's still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!
 
-::: {.callout-tip}
+::: {.callout-tip #exercise-dataset}
 ## Exercises
 
 ::: {.panel-tabset}
