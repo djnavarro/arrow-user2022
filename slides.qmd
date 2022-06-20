@@ -94,7 +94,7 @@ library(sf)
 
 Section 1: In which we dive straight into Arrow
 
-## Opening a data set
+## Opening a [data set](packages-and-data.html#data)
 
 ```{r open-dataset}
 #| echo: true

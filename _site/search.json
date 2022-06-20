@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.524 sec elapsed\n\n\n\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.113 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.528 sec elapsed\n\n\n\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.143 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.022 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.016 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -1166,6 +1166,6 @@
     "href": "slides.html#partition-structure-matters-1",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.529 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.952 sec elapsed"
   }
 ]
