@@ -576,7 +576,7 @@ borough_counts
 How many taxi pickups were recorded in 2019 from the three major airports covered by the NYC Taxis data set (JFK, LaGuardia, Newark)? 
 
 
-# Using DuckDB
+# Using DuckDB 🦆
 
 Section 8: In which {arrow} and {duckdb} play nicely
 
@@ -592,6 +592,18 @@ penguins |>
 
 ## An easy fix with {duckdb}
 
+```{r penguin-window-duckdb-fake, eval=FALSE}
+penguins |> 
+  arrow_table() |> 
+  to_duckdb() |>  # zero-copy handover to duckdb
+  mutate(id = row_number()) |>
+  filter(is.na(sex)) |> 
+  select(id, sex, species, island)
+```  
+
+
+## An easy fix with {duckdb}
+
 ```{r penguin-window-duckdb}
 penguins |> 
   arrow_table() |> 
@@ -601,7 +613,12 @@ penguins |>
   select(id, sex, species, island)
 ```  
 
-## Numerology example
+
+## [Numerology example](data-wrangling.html#example-8-something-bigger)
+
+> For the January 2022 NYC data, we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, andp the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a "magic number" that removes all the digits from the rank that are not 5 or 9
+
+## [Numerology example](data-wrangling.html#example-8-something-bigger)
 
 ```{r numerology, cache=TRUE}
 tic()
@@ -627,8 +644,7 @@ toc()
 ```
 
 
-
-## Numerology example
+## [Numerology example](data-wrangling.html#example-8-something-bigger)
 
 ```{r numerology-print}
 numerology

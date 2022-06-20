@@ -606,21 +606,21 @@
     "href": "slides.html#an-easy-fix-with-duckdb",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "An easy fix with {duckdb}",
-    "text": "An easy fix with {duckdb}\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows"
+    "text": "An easy fix with {duckdb}\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |>  # zero-copy handover to duckdb\n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)"
   },
   {
     "objectID": "slides.html#numerology-example",
     "href": "slides.html#numerology-example",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Numerology example",
-    "text": "Numerology example\n\ntic()\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.542 sec elapsed"
+    "text": "Numerology example\n\nFor the January 2022 NYC data, we want to rank the taxi rides in chronological order by pickup time. We then want to find those taxi rides where the pickup occurred on the 59th minute of the hour, and the 59th second of minute, andp the numerical rank of that ride contains the number 59 in it. We would like to return the rank, the pickup time, and a “magic number” that removes all the digits from the rank that are not 5 or 9"
   },
   {
     "objectID": "slides.html#numerology-example-1",
     "href": "slides.html#numerology-example-1",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Numerology example",
-    "text": "Numerology example\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows"
+    "text": "Numerology example\n\ntic()\nnyc_taxi_jan <- open_dataset(\"~/Datasets/nyc-taxi/year=2022/month=1/\")\nnumerology <- nyc_taxi_jan |>\n  to_duckdb() |>  \n  window_order(pickup_datetime) |>\n  mutate(trip_id = row_number()) |>\n  filter(\n    trip_id |> as.character() |> str_detect(\"59\"),\n    second(pickup_datetime) == 59,\n    minute(pickup_datetime) == 59\n  ) |> \n  mutate(\n    magic_number = trip_id |> \n      as.character() |> \n      str_remove_all(\"[^59]\") |>\n      as.integer()\n  ) |>\n  select(trip_id, magic_number, pickup_datetime) |>\n  collect()\ntoc()\n\n0.542 sec elapsed"
   },
   {
     "objectID": "slides.html#readwrite-2",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.471 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.095 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.484 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.099 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.13 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.03 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -1125,5 +1125,19 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "The results",
     "text": "The results\n\nborough_counts\n\n# A tibble: 50 × 3\n   pickup_borough dropoff_borough          n\n   <chr>          <chr>                <int>\n 1 <NA>           <NA>            1249152360\n 2 Manhattan      Manhattan        355850092\n 3 Queens         Manhattan         14648891\n 4 Manhattan      Queens            13186443\n 5 Manhattan      Brooklyn          11294128\n 6 Queens         Queens             7537042\n 7 Unknown        Unknown            4519763\n 8 Queens         Brooklyn           3727686\n 9 Brooklyn       Brooklyn           3566671\n10 Manhattan      Bronx              2091627\n# … with 40 more rows"
+  },
+  {
+    "objectID": "slides.html#an-easy-fix-with-duckdb-1",
+    "href": "slides.html#an-easy-fix-with-duckdb-1",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "An easy fix with {duckdb}",
+    "text": "An easy fix with {duckdb}\n\npenguins |> \n  arrow_table() |> \n  to_duckdb() |> \n  mutate(id = row_number()) |>\n  filter(is.na(sex)) |> \n  select(id, sex, species, island)\n\n# Source:   lazy query [?? x 4]\n# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]\n      id sex   species island   \n   <dbl> <chr> <chr>   <chr>    \n 1     4 <NA>  Adelie  Torgersen\n 2     9 <NA>  Adelie  Torgersen\n 3    10 <NA>  Adelie  Torgersen\n 4    11 <NA>  Adelie  Torgersen\n 5    12 <NA>  Adelie  Torgersen\n 6    48 <NA>  Adelie  Dream    \n 7   179 <NA>  Gentoo  Biscoe   \n 8   219 <NA>  Gentoo  Biscoe   \n 9   257 <NA>  Gentoo  Biscoe   \n10   269 <NA>  Gentoo  Biscoe   \n# … with more rows"
+  },
+  {
+    "objectID": "slides.html#numerology-example-2",
+    "href": "slides.html#numerology-example-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Numerology example",
+    "text": "Numerology example\n\nnumerology\n\n# A tibble: 37 × 3\n   trip_id magic_number pickup_datetime    \n     <dbl>        <int> <dttm>             \n 1   13159           59 2022-01-01 02:59:59\n 2   39159          959 2022-01-01 15:59:59\n 3   65940           59 2022-01-02 01:59:59\n 4  159315          595 2022-01-03 14:59:59\n 5  405954          595 2022-01-06 18:59:59\n 6  405955         5955 2022-01-06 18:59:59\n 7  487592           59 2022-01-07 21:59:59\n 8  590708           59 2022-01-09 07:59:59\n 9  590709          599 2022-01-09 07:59:59\n10  590710           59 2022-01-09 07:59:59\n# … with 27 more rows"
   }
 ]
