@@ -364,6 +364,10 @@ short_zones <- nyc_taxi_zones_arrow |>
 collect(short_zones)
 ```
 
+## [For more infomation](/data-wrangling.html#exercise-stringr)
+
+![](img/stringr_exercises.png)
+
 
 # Dates and times 
 

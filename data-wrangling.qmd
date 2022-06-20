@@ -175,7 +175,7 @@ nyc_taxi_zones_arrow |>
 
 These changes aren't arbitrary. Translations are never perfect, and you can see hints of that in this example. The exercises below explore this!
 
-::: {.callout-tip}
+::: {.callout-tip #exercise-stringr}
 ## Exercises
 
 ::: {.panel-tabset}
