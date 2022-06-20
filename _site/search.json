@@ -480,7 +480,7 @@
     "href": "slides.html#pickup-at-pi-time-1",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Pickup at pi time",
-    "text": "Pickup at pi time\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\nThe output is correct: hour == 3 refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)"
+    "text": "Pickup at pi time\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\n The output looks strange because timezones are weird… hour == 3 refers to Arrow timestamp (stored in UTC,) but R print method displays output in (my) local time (UTC+11)"
   },
   {
     "objectID": "slides.html#penguin-data",
@@ -683,7 +683,7 @@
     "href": "slides.html#selective-reads-are-faster",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Selective reads are faster",
-    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.613 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.147 sec elapsed"
+    "text": "Selective reads are faster\n\ntic()\nparquet_file |>\n  read_parquet() |>\n  invisible() # suppress printing\ntoc()\n\n0.498 sec elapsed\n\ntic()\nparquet_file |>\n  read_parquet(col_select = matches(\"pickup\")) |>\n  invisible()\ntoc()\n\n0.097 sec elapsed"
   },
   {
     "objectID": "slides.html#nyc-taxi-data-files",
@@ -697,7 +697,7 @@
     "href": "slides.html#partition-structure-matters",
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "Partition structure matters",
-    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.019 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n3.82 sec elapsed"
+    "text": "Partition structure matters\n\ntic()\nnyc_taxi |>\n  filter(year == 2016, month == 9) |>\n  nrow() \n\n[1] 10116018\n\ntoc()\n\n0.012 sec elapsed\n\ntic()\nnyc_taxi |> \n  filter(pickup_location_id == 138) |> \n  nrow() \n\n[1] 10823589\n\ntoc()\n\n2.755 sec elapsed"
   },
   {
     "objectID": "slides.html#writing-datasets",
@@ -1034,5 +1034,26 @@
     "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
     "section": "String manipulation exercise… in Arrow",
     "text": "String manipulation exercise… in Arrow\n\nshort_zones <- nyc_taxi_zones_arrow |> \n  mutate(\n    abbr_zone = zone |> \n      str_replace_all(\"[aeiou' ]\", \"\") |>\n      str_replace_all(\"/.*\", \"\")\n  ) |>\n  mutate(\n    abbr_zone_len = str_length(abbr_zone)\n  ) |>\n  select(zone, abbr_zone, abbr_zone_len) |>\n  arrange(desc(abbr_zone_len)) \n\n\nwhy use two mutate() calls?\nwhy use str_replace_all() and not str_remove_all()"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time-2",
+    "href": "slides.html#pickup-at-pi-time-2",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time",
+    "text": "Pickup at pi time\n\npi_time_pickups_arrow <- compute(pi_time_pickups) \npi_time_pickups_arrow\n\nTable\n5 rows x 5 columns\n$pickup_datetime <timestamp[ms]>\n$year <int32>\n$month <int32>\n$day <int64>\n$weekday <string>"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time-compute",
+    "href": "slides.html#pickup-at-pi-time-compute",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time: compute()",
+    "text": "Pickup at pi time: compute()\n\ncompute(pi_time_pickups)\n\nTable\n5 rows x 5 columns\n$pickup_datetime <timestamp[ms]>\n$year <int32>\n$month <int32>\n$day <int64>\n$weekday <string>"
+  },
+  {
+    "objectID": "slides.html#pickup-at-pi-time-collect",
+    "href": "slides.html#pickup-at-pi-time-collect",
+    "title": "Larger-Than-Memory Data Workflows with Apache Arrow",
+    "section": "Pickup at pi time: collect()",
+    "text": "Pickup at pi time: collect()\n\ncollect(pi_time_pickups) \n\n# A tibble: 5 × 5\n  pickup_datetime      year month   day weekday\n  <dttm>              <int> <int> <int> <chr>  \n1 2022-01-01 14:14:15  2022     1     1 Sat    \n2 2022-01-01 14:14:15  2022     1     1 Sat    \n3 2022-01-01 14:14:15  2022     1     1 Sat    \n4 2022-01-09 14:14:15  2022     1     9 Sun    \n5 2022-01-18 14:14:15  2022     1    18 Tue    \n\n\n\nTimezones are… difficult\n\nhour == 3 refers to Arrow timestamp (stored in UTC)\nR prints POSIXct in (my) local time (UTC+11)"
   }
 ]

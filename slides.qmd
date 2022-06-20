@@ -385,14 +385,25 @@ pi_time_pickups <- nyc_taxi |>
   select(pickup_datetime, year, month, day, weekday)
 ```
 
-## Pickup at pi time
+## Pickup at pi time: `compute()`
+
+```{r lubridate-expression-compute}
+#| cache: true
+compute(pi_time_pickups)
+```
+
+
+## Pickup at pi time: `collect()`
 
 ```{r lubridate-expression-collect}
 #| cache: true
 collect(pi_time_pickups) 
 ```
 
-The output is correct: `hour == 3` refers to time stored in UTC, but the R print method is displays output in my local time (UTC+11)
+
+- Timezones are... difficult 
+  - `hour == 3` refers to Arrow timestamp (stored in UTC)
+  - R prints POSIXct in (my) local time (UTC+11)
 
 
 # Database joins
