@@ -603,12 +603,16 @@ Section 9: In which we talk about parquet files
 
 ![](img/arrow-read-write-dataset.png)
 
-## Parquet files are "row chunked"
+## Parquet files are "row-chunked"
 
 ![](img/parquet-chunking.png)
 
+## Parquet files are "row-chunked, column-arranged, ..."
 
-## Parquet files are "row chunked, column-arranged, and paged"
+![](img/parquet-columnar.png)
+
+
+## Parquet files are "row-chunked, column-arranged, and paged"
 
 ![](img/parquet-paging.png)
 
