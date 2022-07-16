@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-0.9.282">
+<meta name="generator" content="quarto-0.9.613">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -80,19 +80,20 @@ code span.vs { color: #4070a0; } /* VerbatimString */
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 </style>
 
+
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="site_libs/quarto-nav/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
-<meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
@@ -119,8 +120,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <link rel="stylesheet" href="styles.css">
 <meta property="og:title" content="Apache Arrow in R - Part 2: Data Wrangling with Arrow">
+<meta property="og:description" content="In this session we’ll explore the data manipulation capabilities of arrow in a little more detail.">
 <meta property="og:site-name" content="Apache Arrow in R">
 <meta name="twitter:title" content="Apache Arrow in R - Part 2: Data Wrangling with Arrow">
+<meta name="twitter:description" content="In this session we’ll explore the data manipulation capabilities of arrow in a little more detail.">
 <meta name="twitter:image" content="http://arrow-user2022.netlify.app/img/social-media-image.png">
 <meta name="twitter:creator" content="@djnavarro">
 <meta name="twitter:card" content="summary_large_image">
@@ -216,8 +219,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="quarto-title">
 <h1 class="title">Part 2: Data Wrangling with Arrow</h1>
 </div>
-
-
 
 
 
@@ -461,7 +462,7 @@ $service_zone &lt;string&gt;</code></pre>
 </div>
 </div>
 <p>These changes aren’t arbitrary. Translations are never perfect, and you can see hints of that in this example. The exercises below explore this!</p>
-<div class="callout-tip callout callout-style-default callout-captioned">
+<div id="exercise-stringr" class="callout-tip callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -793,7 +794,9 @@ See $.data for the source Arrow object</code></pre>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
 <pre><code>Error in `collect()`:
-! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32</code></pre>
+! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32
+/home/danielle/GitHub/projects/arrow/cpp/src/arrow/compute/exec/hash_join_node.cc:122  ValidateSchemas(join_type, left_schema, left_keys, left_output, right_schema, right_keys, right_output, left_field_name_suffix, right_field_name_suffix)
+/home/danielle/GitHub/projects/arrow/cpp/src/arrow/compute/exec/hash_join_node.cc:697  schema_mgr-&gt;Init( join_options.join_type, left_schema, join_options.left_keys, join_options.left_output, right_schema, join_options.right_keys, join_options.right_output, join_options.filter, join_options.output_suffix_for_left, join_options.output_suffix_for_right)</code></pre>
 </div>
 </div>
 <p>If we dig into this error message it’s telling us that we’ve encountered a type mismatch. The <code>nyc_taxi</code> and <code>pickup</code> tables both contain a column named <code>pickup_location_id</code>, and so the <code>left_join()</code> function has attempted to join on that column. However, the two columns don’t store the same kind of data, so Arrow throws an error message. That might seem a little odd because they’re both storing integer values, and that’s the same type of data right?</p>
@@ -916,17 +919,19 @@ service_zone: string</code></pre>
 # … with 40 more rows</code></pre>
 </div>
 </div>
+
 <!-- - the two-table database joins: `left_join()`, `inner_join()`, `full_join()`, etc -->
 <!-- - various helper functions and other assorted conveniences: `n()`, `count()` -->
 <!-- After a little thought you would also realise that the **arrow** package must also be providing support for a lot of other low level features: -->
 <!-- - Arithmetic and logical operations  -->
 <!-- - Mathematical computations: `sin()`, `log()`, `exp()`, etc -->
+
 <!-- - Methods for `$`, `[[`, `[`, to allow Tables to behave like data frames -->
 <!-- Exploring further you might discover that **arrow** also has support for regular expressions and temporal arithmetic, and as a consequence there is partial coverage of **stringr** and **lubridate** functionality too. You can use `str_match()` as part of an "arrowplyr" pipeline, and everything will work fine! -->
 <!-- However you'll also notice that coverage of **dplyr** is not 100% either. For example, as of **arrow** 8.0.0, there is no support for the `row_number()` convenience function. That's not a big deal, because it's easy to use `1:n()` instead. In other cases, the limitations are a bit more substantial: for example, **arrow** does not support using  `across()` or even the older scoped functions like `mutate_at()`. -->
 <!-- This might lead you to wonder... exactly what does **arrow** support? What doesn't it support? Is there a comprehensive list somewhere that you can check?  -->
 <!-- They're good questions, but they don't have entirely satisfying answers. The capabilities of the Arrow C++ library that supplies the compute engine are growing very quickly, and as a consequence the scope of what the **arrow** R package can support is growing quickly too. That means it's a bit of a moving target! As time goes by we're going to be adding more functionality _and_ putting together more instructional material documenting use cases and showing off the things you can do with the package -->
-<div class="callout-tip callout callout-style-default callout-captioned">
+<div id="exercise-joins" class="callout-tip callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -1037,8 +1042,8 @@ Exercises
 <span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
 <span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># Source:   lazy query [?? x 4]
-# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
+<pre><code># Source:   SQL [?? x 4]
+# Database: DuckDB 0.3.5-dev1410 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
       id sex   species island   
    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;    
  1     4 &lt;NA&gt;  Adelie  Torgersen
@@ -1091,7 +1096,7 @@ Exercises
 <span id="cb71-18"><a href="#cb71-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
 <span id="cb71-19"><a href="#cb71-19" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.543 sec elapsed</code></pre>
+<pre><code>0.438 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>numerology</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -1130,7 +1135,8 @@ Resources on Arrow/DuckDB integration
 </section>
 
 </main> <!-- /main -->
-<script type="application/javascript">
+<script defer="" data-domain="arrow-user2022.netlify.app" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const icon = "";
   const anchorJS = new window.AnchorJS();

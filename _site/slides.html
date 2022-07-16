@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-  <meta charset="utf-8">
-  <meta name="generator" content="quarto-0.9.282">
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-html/tabby.min.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-html.min.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-0.9.613">
 
   <meta name="author" content="Danielle Navarro, Jonathan Keane, Stephanie Hazlitt">
   <title>Apache Arrow in R - Larger-Than-Memory Data Workflows with Apache Arrow</title>
@@ -47,48 +53,42 @@
       }
     pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
     div.sourceCode
-      {   }
+      { color: #003b4f; background-color: #f1f3f5; }
     @media screen {
     pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
     }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
     code span.bu { } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.cf { color: #003b4f; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
     code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
   <link rel="stylesheet" href="site_libs/revealjs/dist/theme/quarto.css" id="theme">
-  <script src="site_libs/clipboard/clipboard.min.js"></script>
-  <script src="site_libs/quarto-html/tabby.min.js"></script>
-  <script src="site_libs/quarto-html/popper.min.js"></script>
-  <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-  <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-  <link href="site_libs/quarto-html/quarto-html.min.css" rel="stylesheet">
-  <link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
   <link href="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -102,7 +102,7 @@
   }
 
   .callout.callout-style-simple { 
-    padding: 0em 0.7em;
+    padding: 0em 0.5em;
     border-left: solid #acacac .3rem;
     border-right: solid 1px silver;
     border-top: solid 1px silver;
@@ -213,8 +213,7 @@
     display: none !important;
   }
 
-  .callout.callout-captioned .callout-body > :last-child,
-  .callout.callout-captioned .callout-body > div > :last-child {
+  .callout.callout-captioned .callout-body > .callout-content > :last-child {
     margin-bottom: 0.5rem;
   }
 
@@ -1069,7 +1068,9 @@ $lat &lt;double&gt;</code></pre>
 <span id="cb46-3"><a href="#cb46-3"></a>  <span class="fu">collect</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-error">
 <pre><code>Error in `collect()`:
-! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32</code></pre>
+! Invalid: Incompatible data types for corresponding join field keys: FieldRef.Name(pickup_location_id) of type int64 and FieldRef.Name(pickup_location_id) of type int32
+/home/danielle/GitHub/projects/arrow/cpp/src/arrow/compute/exec/hash_join_node.cc:122  ValidateSchemas(join_type, left_schema, left_keys, left_output, right_schema, right_keys, right_output, left_field_name_suffix, right_field_name_suffix)
+/home/danielle/GitHub/projects/arrow/cpp/src/arrow/compute/exec/hash_join_node.cc:697  schema_mgr-&gt;Init( join_options.join_type, left_schema, join_options.left_keys, join_options.left_output, right_schema, join_options.right_keys, join_options.right_output, join_options.filter, join_options.output_suffix_for_left, join_options.output_suffix_for_right)</code></pre>
 </div>
 </div>
 </section>
@@ -1262,8 +1263,8 @@ service_zone: string</code></pre>
 <span id="cb62-5"><a href="#cb62-5"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(sex)) <span class="sc">|&gt;</span> </span>
 <span id="cb62-6"><a href="#cb62-6"></a>  <span class="fu">select</span>(id, sex, species, island)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># Source:   lazy query [?? x 4]
-# Database: DuckDB 0.3.4 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
+<pre><code># Source:   SQL [?? x 4]
+# Database: DuckDB 0.3.5-dev1410 [danielle@Linux 5.13.0-51-generic:R 4.2.0/:memory:]
       id sex   species island   
    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;    
  1     4 &lt;NA&gt;  Adelie  Torgersen
@@ -1424,7 +1425,7 @@ service_zone: string</code></pre>
 <span id="cb72-4"><a href="#cb72-4"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb72-5"><a href="#cb72-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.528 sec elapsed</code></pre>
+<pre><code>1.155 sec elapsed</code></pre>
 </div>
 </div>
 <p><br></p>
@@ -1435,7 +1436,7 @@ service_zone: string</code></pre>
 <span id="cb74-4"><a href="#cb74-4"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb74-5"><a href="#cb74-5"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.143 sec elapsed</code></pre>
+<pre><code>0.191 sec elapsed</code></pre>
 </div>
 </div>
 </section>
@@ -1626,7 +1627,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb80"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.016 sec elapsed</code></pre>
+<pre><code>0.013 sec elapsed</code></pre>
 </div>
 </div>
 </section>
@@ -1642,7 +1643,7 @@ service_zone: string</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb84"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2.952 sec elapsed</code></pre>
+<pre><code>4.958 sec elapsed</code></pre>
 </div>
 </div>
 </section>
@@ -1992,12 +1993,13 @@ $city &lt;string&gt;</code></pre>
   <script>window.backupDefine = window.define; window.define = undefined;</script>
   <script src="site_libs/revealjs/dist/reveal.js"></script>
   <!-- reveal.js plugins -->
-    <script src="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
-    <script src="site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
-    <script src="site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
-    <script src="site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
-    <script src="site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  <script src="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="site_libs/revealjs/plugin/quarto-support/support.js"></script>
   
+
   <script src="site_libs/revealjs/plugin/notes/notes.js"></script>
   <script src="site_libs/revealjs/plugin/search/search.js"></script>
   <script src="site_libs/revealjs/plugin/zoom/zoom.js"></script>
@@ -2238,7 +2240,7 @@ $city &lt;string&gt;</code></pre>
       })();
     </script>
 
-    <script type="application/javascript">
+    <script id="quarto-html-after-body" type="application/javascript">
     window.document.addEventListener("DOMContentLoaded", function (event) {
       const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
       tabsets.forEach(function(tabset) {

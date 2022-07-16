@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-0.9.282">
+<meta name="generator" content="quarto-0.9.613">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -80,19 +80,20 @@ code span.vs { color: #4070a0; } /* VerbatimString */
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 </style>
 
+
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="site_libs/quarto-nav/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
-<meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link id="quarto-text-highlighting-styles" href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet">
@@ -119,8 +120,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <link rel="stylesheet" href="styles.css">
 <meta property="og:title" content="Apache Arrow in R - Part 3: Data Storage">
+<meta property="og:description" content="In this session we’ll talk about reading and writing large data sets.">
 <meta property="og:site-name" content="Apache Arrow in R">
 <meta name="twitter:title" content="Apache Arrow in R - Part 3: Data Storage">
+<meta name="twitter:description" content="In this session we’ll talk about reading and writing large data sets.">
 <meta name="twitter:image" content="http://arrow-user2022.netlify.app/img/social-media-image.png">
 <meta name="twitter:creator" content="@djnavarro">
 <meta name="twitter:card" content="summary_large_image">
@@ -199,8 +202,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="quarto-title">
 <h1 class="title">Part 3: Data Storage</h1>
 </div>
-
-
 
 
 
@@ -314,7 +315,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>() <span class="co"># suppress printing</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.484 sec elapsed</code></pre>
+<pre><code>1.206 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>parquet_file <span class="sc">|&gt;</span></span>
@@ -322,11 +323,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.108 sec elapsed</code></pre>
+<pre><code>0.183 sec elapsed</code></pre>
 </div>
 </div>
 <p>This property is handy when dealing with larger-than-memory data: because we can’t load the whole thing into memory, we’re going to have to iteratively read small pieces of the data set. In the next section we’ll talk about how large data sets are typically distributed over many parquet files, but the key thing right now is that whenever we’re loading one of those pieces from a parquet file, an intelligently designed reader will be able to speed things up by reading only the relevant subset each parquet file.</p>
-<div class="callout-tip callout callout-style-default callout-captioned">
+<div id="exercise-parquet" class="callout-tip callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -478,7 +479,7 @@ passenger_count: int64
 <span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>0.012 sec elapsed</code></pre>
+<pre><code>0.014 sec elapsed</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tic</span>()</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>nyc_taxi <span class="sc">|&gt;</span> </span>
@@ -487,7 +488,7 @@ passenger_count: int64
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">invisible</span>()</span>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="fu">toc</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>2.331 sec elapsed</code></pre>
+<pre><code>3.895 sec elapsed</code></pre>
 </div>
 </div>
 <p>Admittedly, this is a bit of a contrived example, but the core point is still important: partitioning the data set on variables that you’re most likely to query on tends to speed things up.</p>
@@ -582,14 +583,14 @@ trip_distance: double
 <pre><code># A tibble: 12 × 2
    month  distance
    &lt;int&gt;     &lt;dbl&gt;
- 1    12 13642500.
- 2     1 33436823.
+ 1     1 33436823.
+ 2    12 13642500.
  3    10 41799496.
  4    11 13826243.
- 5     3 55384892.
- 6     2 40006137.
- 7     5 52798627.
- 8     4 27440575.
+ 5     2 40006137.
+ 6     3 55384892.
+ 7     4 27440575.
+ 8     5 52798627.
  9     6 15617981.
 10     7 19210103.
 11     8 22581320.
@@ -599,17 +600,17 @@ trip_distance: double
 <p>Here’s the time taken for this query:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>0.484 sec elapsed</code></pre>
+<pre><code>0.556 sec elapsed</code></pre>
 </div>
 </div>
 <p>and for the same query performed on the <code>nyc_taxi_2016a</code> data:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>1.783 sec elapsed</code></pre>
+<pre><code>4.829 sec elapsed</code></pre>
 </div>
 </div>
 <p>The difference is not quite as extreme as the contrived example earlier, but it’s still quite substantial: using your domain expertise to choose relevant variables to partition on can make a real difference in how your queries perform!</p>
-<div class="callout-tip callout callout-style-default callout-captioned">
+<div id="exercise-dataset" class="callout-tip callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -649,12 +650,12 @@ Exercises
 <pre><code># A tibble: 6 × 3
   pickup_datetime     monthday yearday
   &lt;dttm&gt;                 &lt;int&gt;   &lt;int&gt;
-1 2019-11-01 15:10:52        1     305
-2 2019-11-01 15:03:26        1     305
-3 2019-11-01 15:10:34        1     305
-4 2019-11-01 15:10:34        1     305
-5 2019-11-01 15:14:44        1     305
-6 2019-11-01 15:23:41        1     305</code></pre>
+1 2019-10-02 06:41:22        1     274
+2 2019-10-02 06:53:46        1     274
+3 2019-10-02 06:05:22        1     274
+4 2019-10-02 06:19:59        1     274
+5 2019-10-02 06:45:45        1     274
+6 2019-10-02 06:03:44        1     274</code></pre>
 </div>
 </div>
 </div>
@@ -751,7 +752,8 @@ Exercises
 </section>
 
 </main> <!-- /main -->
-<script type="application/javascript">
+<script defer="" data-domain="arrow-user2022.netlify.app" src="https://plausible.io/js/plausible.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const icon = "";
   const anchorJS = new window.AnchorJS();
