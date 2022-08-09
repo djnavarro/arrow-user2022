@@ -2,6 +2,7 @@
 # Larger-Than-Memory Data Workflows with Apache Arrow
 
 <!-- badges: start -->
+[![DOI](https://zenodo.org/badge/505020662.svg)](https://zenodo.org/badge/latestdoi/505020662) [![Netlify Status](https://api.netlify.com/api/v1/badges/ae31113f-79b7-4bc0-9e26-600ced0da14b/deploy-status)](https://app.netlify.com/sites/arrow-user2022/deploys)
 <!-- badges: end -->
 
 This repository contains source code and data for the Apache Arrow workshop run as part of the 2022 UseR! Conference. You can fork and download this repository from [GitHub](https://github.com/) with:
